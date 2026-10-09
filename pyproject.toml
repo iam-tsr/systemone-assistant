@@ -1,0 +1,12 @@
+[project]
+name = "systemone-assistant"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "TSR" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "laya>=0.4.1",
+]
