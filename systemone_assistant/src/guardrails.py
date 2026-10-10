@@ -9,7 +9,7 @@ def guardrail(state: str):
 
         "malicious_code": {"type": "noul", "instructions": "Does the user request to generate, explain, or execute malware, exploits, SQL injection payloads, XSS scripts, or any form of cyberattack tools."},
 
-        "churn_risk": {"type": "noul", "instructions": "Does the user threaten to cancel or leave?"},
+        "churn_risk": {"type": "noul", "instructions": "Does the user threatens to leave or stop using the service"},
 
         "intent": {"type": "choice", "instructions": "Classify the intent of the user message.",
                    "criteria": {
