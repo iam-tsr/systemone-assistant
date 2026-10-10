@@ -20,7 +20,7 @@ class Endpoint:
 
 def slm_endpoint() -> Endpoint:
     return Endpoint(
-        base_url=os.environ.get("SLM_BASE_URL", "http://localhost:8000/v1").rstrip("/"),
+        base_url=os.environ.get("SLM_BASE_URL", "http://localhost:8080/v1"),
         api_key=os.environ.get("SLM_API_KEY", "EMPTY"),
         model=os.environ.get("SLM_MODEL", "slm"),
     )
@@ -28,7 +28,7 @@ def slm_endpoint() -> Endpoint:
 
 def llm_endpoint() -> Endpoint:
     return Endpoint(
-        base_url=os.environ.get("LLM_BASE_URL", "http://localhost:8001/v1").rstrip("/"),
+        base_url=os.environ.get("LLM_BASE_URL", "http://localhost:8080/v1"),
         api_key=os.environ.get("LLM_API_KEY", "EMPTY"),
         model=os.environ.get("LLM_MODEL", "llm"),
     )

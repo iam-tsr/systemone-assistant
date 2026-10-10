@@ -26,14 +26,13 @@ def guardrail(state: str):
     jail_break = result["answers"]["jail_break"]["noul"]
     hate_speech = result["answers"]["hate_speech"]["noul"]
     malicious_code = result["answers"]["malicious_code"]["noul"]
-    off_topic = result["answers"]["off_topic"]["noul"]
+    # Soft: a low on_topic score means the message is off-topic. Chitchat is decided later by
+    # the router, so greetings are not blocked here.
+    on_topic = result["answers"]["off_topic"]["noul"]
     
     # Hard safety block: never routed, never answered.
     safety_score = 1 if (jail_break > 0.7 or hate_speech > 0.7 or malicious_code > 0.7) else 0
 
-    # Soft: a low on_topic score means the message is off-topic. Chitchat is decided later by
-    # the router, so greetings are not blocked here.
-    on_topic = off_topic
 
     churn_risk = result["answers"]["churn_risk"]["noul"]
     intent_score = result["answers"]["intent"]["score"]

@@ -1,3 +1,3 @@
-from .guardrails import guardrail
+from .pipeline import handle_message
 
-__all__ = ["guardrail"]
+__all__ = ["handle_message"]
