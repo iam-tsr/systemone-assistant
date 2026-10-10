@@ -8,5 +8,6 @@ authors = [
 ]
 requires-python = ">=3.12"
 dependencies = [
-    "laya>=0.4.1",
+    "httpx>=0.28.1",
+    "laya[serve]>=0.4.1",
 ]
