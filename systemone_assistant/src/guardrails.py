@@ -28,20 +28,19 @@ def guardrail(state: str):
     malicious_code = result["answers"]["malicious_code"]["noul"]
     off_topic = result["answers"]["off_topic"]["noul"]
     
-    if jail_break > 0.7 or hate_speech > 0.7 or malicious_code > 0.7 or off_topic < 0.7:
-        prompt_score = 1
-    else:
-        prompt_score = 0
+    # Hard safety block: never routed, never answered.
+    safety_score = 1 if (jail_break > 0.7 or hate_speech > 0.7 or malicious_code > 0.7) else 0
 
-    # churn_risk = result["answers"]["churn_risk"]["noul"]
-    # intent_score = result["answers"]["intent"]["score"]
+    # Soft: a low on_topic score means the message is off-topic. Chitchat is decided later by
+    # the router, so greetings are not blocked here.
+    on_topic = off_topic
+
+    churn_risk = result["answers"]["churn_risk"]["noul"]
+    intent_score = result["answers"]["intent"]["score"]
 
     return {
-        "prompt_score": prompt_score,
-        # "jail_break": jail_break,
-        # "hate_speech": hate_speech,
-        # "malicious_code": malicious_code,
-        # "off_topic": off_topic,
-        # "churn_risk": churn_risk,
-        # "intent_score": intent_score,
+        "safety_score": safety_score,
+        "on_topic": on_topic,
+        "churn_risk": churn_risk,
+        "intent_score": intent_score,
     }
