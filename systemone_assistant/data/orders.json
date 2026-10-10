@@ -4,7 +4,12 @@
     "status": "processing",
     "placed_at": "2026-10-08T09:15:00Z",
     "items": [
-      {"sku": "HDPH-200", "name": "Wireless Headphones", "qty": 1, "price": 89.99}
+      {
+        "sku": "HDPH-200",
+        "name": "Wireless Headphones",
+        "qty": 1,
+        "price": 89.99
+      }
     ],
     "total": 89.99,
     "currency": "USD",
@@ -18,9 +23,14 @@
     "status": "shipped",
     "placed_at": "2026-10-05T14:02:00Z",
     "items": [
-      {"sku": "KB-770", "name": "Mechanical Keyboard", "qty": 1, "price": 129.00}
+      {
+        "sku": "KB-770",
+        "name": "Mechanical Keyboard",
+        "qty": 1,
+        "price": 129.0
+      }
     ],
-    "total": 129.00,
+    "total": 129.0,
     "currency": "USD",
     "shipping_address": "88 Pine Avenue, Denver, CO 80202, USA",
     "carrier": "UPS",
@@ -32,9 +42,14 @@
     "status": "delivered",
     "placed_at": "2026-09-28T11:40:00Z",
     "items": [
-      {"sku": "LMP-12", "name": "Desk Lamp", "qty": 2, "price": 34.50}
+      {
+        "sku": "LMP-12",
+        "name": "Desk Lamp",
+        "qty": 2,
+        "price": 34.5
+      }
     ],
-    "total": 69.00,
+    "total": 69.0,
     "currency": "USD",
     "shipping_address": "5 Birch Lane, Seattle, WA 98101, USA",
     "carrier": "FedEx",
@@ -47,9 +62,14 @@
     "status": "cancelled",
     "placed_at": "2026-10-06T08:30:00Z",
     "items": [
-      {"sku": "CAM-4K", "name": "Action Camera", "qty": 1, "price": 199.00}
+      {
+        "sku": "CAM-4K",
+        "name": "Action Camera",
+        "qty": 1,
+        "price": 199.0
+      }
     ],
-    "total": 199.00,
+    "total": 199.0,
     "currency": "USD",
     "shipping_address": "301 Cedar Road, Phoenix, AZ 85004, USA",
     "carrier": null,
@@ -63,7 +83,12 @@
     "status": "processing",
     "placed_at": "2026-10-09T18:45:00Z",
     "items": [
-      {"sku": "BKP-30", "name": "Laptop Backpack", "qty": 1, "price": 59.95}
+      {
+        "sku": "BKP-30",
+        "name": "Laptop Backpack",
+        "qty": 1,
+        "price": 59.95
+      }
     ],
     "total": 59.95,
     "currency": "USD",
@@ -77,9 +102,14 @@
     "status": "shipped",
     "placed_at": "2026-10-03T10:10:00Z",
     "items": [
-      {"sku": "SPK-BT5", "name": "Bluetooth Speaker", "qty": 1, "price": 75.00}
+      {
+        "sku": "SPK-BT5",
+        "name": "Bluetooth Speaker",
+        "qty": 1,
+        "price": 75.0
+      }
     ],
-    "total": 75.00,
+    "total": 75.0,
     "currency": "USD",
     "shipping_address": "19 Maple Drive, Boston, MA 02108, USA",
     "carrier": "DHL",
