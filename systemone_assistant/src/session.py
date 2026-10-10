@@ -1,77 +1,88 @@
-"""Per-customer chat memory. Older turns are summarized once the prompt nears the context limit.
+"""Per-customer short-term chat memory: a LangGraph thread checkpointed to MongoDB.
 
-Limits (all overridable by env):
-  LLM_CONTEXT_TOKENS  context window; default 68352 (n_ctx reported by the LLM server)
-  TRIGGER_RATIO       summarize when the full prompt would exceed this share of the window (0.7)
-Token counts are estimates (len / CHARS_PER_TOKEN) because no tokenizer is available here.
+Each customer email is one LangGraph thread (`thread_id`), so turns are isolated per customer and
+survive process restarts. The `messages` channel uses `add_messages`, so every turn is appended to
+the stored history by the checkpointer.
+
+Stored turns are the customer's raw message and the assistant's reply. The per-turn prompt (which
+includes tool results) is passed in config for this call only and is not persisted.
 """
-import math
-import os
-from dataclasses import dataclass, field
-from typing import Literal
+from typing import Annotated, TypedDict
 
-from .config import chat, llm_endpoint
-from .prompt import SUMMARY_SYSTEM, summary_user_message
+from langchain_core.messages import AIMessage, AnyMessage, BaseMessage, HumanMessage
+from langchain_core.runnables import RunnableConfig
+from langgraph.checkpoint.mongodb import MongoDBSaver
+from langgraph.graph import END, START, StateGraph
+from langgraph.graph.message import add_messages
+from langgraph.graph.state import CompiledStateGraph
 
+from .config import chat, llm_endpoint, get_client
+from .prompt import REPLY_SYSTEM
 
-DEFAULT_CONTEXT_TOKENS = 68352
-TRIGGER_RATIO = 0.7
-CHARS_PER_TOKEN = 3  # conservative: English is usually about 4 characters per token
-KEEP_RECENT = 4  # newest turns kept verbatim after a summarization
-SUMMARY_MAX_TOKENS = 300
-
-
-@dataclass
-class Message:
-    role: Literal["human", "ai"]
-    content: str
+CHECKPOINT_DB = "systemone"
+REPLY_MAX_TOKENS = 300
+REPLY_TEMPERATURE = 0.3
 
 
-@dataclass
-class Session:
-    messages: list[Message] = field(default_factory=list)
-    summary: str = ""
+class _ChatState(TypedDict):
+    messages: Annotated[list[AnyMessage], add_messages]
 
 
-_sessions: dict[str, Session] = {}
+def _to_openai(messages: list[BaseMessage]) -> list[dict[str, str]]:
+    return [
+        {"role": "user" if isinstance(m, HumanMessage) else "assistant", "content": str(m.content)}
+        for m in messages
+    ]
 
 
-def get_session(customer_email: str) -> Session:
-    return _sessions.setdefault(customer_email, Session())
-
-
-def estimate_tokens(text: str) -> int:
-    return math.ceil(len(text) / CHARS_PER_TOKEN)
-
-
-def trigger_tokens() -> int:
-    return int(int(os.environ.get("LLM_CONTEXT_TOKENS", DEFAULT_CONTEXT_TOKENS)) * TRIGGER_RATIO)
-
-
-def _summarize(prior_summary: str, turns: list[Message]) -> str:
-    return chat(
+def _respond(state: _ChatState, config: RunnableConfig) -> dict[str, list[AnyMessage]]:
+    # The last message is this turn's raw customer message; everything before it is history.
+    history = state["messages"][:-1]
+    turn_prompt = config["configurable"]["turn_prompt"]
+    text = chat(
         llm_endpoint(),
         [
-            {"role": "system", "content": SUMMARY_SYSTEM},
-            {"role": "user", "content": summary_user_message(prior_summary, [(m.role, m.content) for m in turns])},
+            {"role": "system", "content": REPLY_SYSTEM},
+            *_to_openai(history),
+            {"role": "user", "content": turn_prompt},
         ],
-        temperature=0.0,
-        max_tokens=SUMMARY_MAX_TOKENS,
+        temperature=REPLY_TEMPERATURE,
+        max_tokens=REPLY_MAX_TOKENS,
     ).strip()
+    return {"messages": [AIMessage(content=text)]}
 
 
-def compact_if_needed(session: Session, reserved_tokens: int) -> None:
-    """Summarize all but the newest KEEP_RECENT turns if the next prompt would exceed the trigger.
+def build_graph(checkpointer: MongoDBSaver) -> CompiledStateGraph:
+    builder = StateGraph(_ChatState)
+    builder.add_node("respond", _respond)
+    builder.add_edge(START, "respond")
+    builder.add_edge("respond", END)
+    return builder.compile(checkpointer=checkpointer)
 
-    `reserved_tokens` is everything else the next call sends: system prompt, current message,
-    tool result, and the output budget.
+
+_graph: CompiledStateGraph | None = None
+
+
+def _get_graph() -> CompiledStateGraph:
+    global _graph
+    if _graph is None:
+        _graph = build_graph(MongoDBSaver(get_client(), db_name=CHECKPOINT_DB))
+    return _graph
+
+
+def chat_turn(customer_email: str, message: str, turn_prompt: str) -> str:
+    """Run one customer turn through the graph and return the assistant reply.
+
+    `message` is stored as the human turn. `turn_prompt` is what the LLM sees for this turn
+    (customer message plus tool result) and is not stored.
     """
-    used = (
-        estimate_tokens(session.summary)
-        + sum(estimate_tokens(m.content) for m in session.messages)
-        + reserved_tokens
+    result = _get_graph().invoke(
+        {"messages": [HumanMessage(content=message)]},
+        {
+            "configurable": {
+                "thread_id": customer_email.strip().lower(),
+                "turn_prompt": turn_prompt,
+            }
+        },
     )
-    if used <= trigger_tokens() or len(session.messages) <= KEEP_RECENT:
-        return
-    old, session.messages = session.messages[:-KEEP_RECENT], session.messages[-KEEP_RECENT:]
-    session.summary = _summarize(session.summary, old)
+    return str(result["messages"][-1].content)

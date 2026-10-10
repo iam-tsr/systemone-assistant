@@ -1,4 +1,4 @@
-"""Prompt text for the customer reply LLM, the session summarizer, and the canned out-of-scope reply."""
+"""Prompt text for the customer reply LLM and the canned out-of-scope reply."""
 import json
 
 
@@ -39,17 +39,6 @@ If the CUSTOMER_MESSAGE is about ANYTHING ELSE (e.g., general knowledge, math, c
 - Do not include internal system details, variable names (like "TOOL_RESULT" or "action"), or raw JSON in your final response to the customer.
 """
 
-SUMMARY_SYSTEM = """You summarize a customer support conversation so the assistant can continue it later.
-Keep every concrete fact: order numbers, addresses, reasons, requests, decisions, ticket IDs, and outcomes.
-Do not add facts that are not in the conversation. Write plain text, at most 8 sentences."""
-
-
-def reply_system(summary: str) -> str:
-    """Reply system prompt, with the earlier-conversation summary appended when there is one."""
-    if not summary:
-        return REPLY_SYSTEM
-    return f"{REPLY_SYSTEM}\nCONVERSATION_SUMMARY (earlier in this session, for context only):\n{summary}\n"
-
 
 def reply_user_message(message: str, action: str, intent: str, tool_result: dict | None) -> str:
     payload = {"action": action, "tool_result": tool_result}
@@ -58,12 +47,3 @@ def reply_user_message(message: str, action: str, intent: str, tool_result: dict
         f"INTENT: {intent}\n"
         f"TOOL_RESULT: {json.dumps(payload, ensure_ascii=False)}"
     )
-
-
-def summary_user_message(prior_summary: str, turns: list[tuple[str, str]]) -> str:
-    lines = []
-    if prior_summary:
-        lines.append(f"PREVIOUS_SUMMARY: {prior_summary}")
-    lines.append("CONVERSATION:")
-    lines.extend(f"{'Customer' if role == 'human' else 'Assistant'}: {content}" for role, content in turns)
-    return "\n".join(lines)
