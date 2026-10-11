@@ -1,10 +1,6 @@
 """Prompt text for the customer reply LLM and the canned out-of-scope reply."""
-import json
 
-
-REFUSAL = "I can't help with that request. I'm happy to help with orders, shipping, or your account."
-
-REPLY_SYSTEM = """You are a professional, empathetic, and concise customer support assistant for an online store. Your goal is to provide accurate, helpful, and polite responses to customer inquiries.
+SYSTEM_PROMPT = """You are a professional, empathetic, and concise customer support assistant for an online store. Your goal is to provide accurate, helpful, and polite responses to customer inquiries.
 
 ### SCOPE OF ASSISTANCE
 You strictly handle inquiries related ONLY to:
@@ -38,12 +34,3 @@ If the CUSTOMER_MESSAGE is about ANYTHING ELSE (e.g., general knowledge, math, c
 - Maintain a polite, professional, and empathetic tone.
 - Do not include internal system details, variable names (like "TOOL_RESULT" or "action"), or raw JSON in your final response to the customer.
 """
-
-
-def reply_user_message(message: str, action: str, intent: str, tool_result: dict | None) -> str:
-    payload = {"action": action, "tool_result": tool_result}
-    return (
-        f"CUSTOMER_MESSAGE: {message}\n"
-        f"INTENT: {intent}\n"
-        f"TOOL_RESULT: {json.dumps(payload, ensure_ascii=False)}"
-    )
