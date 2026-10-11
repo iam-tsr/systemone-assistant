@@ -1,14 +1,14 @@
 {
   "user": {
-    "userId": 1001,
+    "userId": "usr_1001",
     "name": "Tushar Soni",
     "email": "tushar.soni@example.in",
     "phone": "+91-9876543210"
   },
   "orders": [
     {
-      "orderId": "ord_20261001_0001",
-      "orderDate": "2026-10-01T09:15:00Z",
+      "orderId": 202610010001,
+      "orderDate": { "$date": "2026-10-01T09:15:00Z" },
       "status": "delivered",
       "items": [
         { "productId": "prod_210", "name": "Wireless Keyboard", "quantity": 1, "unitPrice": 2499.0 },
@@ -26,8 +26,8 @@
       "currency": "INR"
     },
     {
-      "orderId": "ord_20261005_0002",
-      "orderDate": "2026-10-05T14:42:00Z",
+      "orderId": 202610050002,
+      "orderDate": { "$date": "2026-10-05T14:42:00Z" },
       "status": "shipped",
       "items": [
         { "productId": "prod_478", "name": "Noise-Cancelling Headphones", "quantity": 1, "unitPrice": 7999.0 }
@@ -44,8 +44,8 @@
       "currency": "INR"
     },
     {
-      "orderId": "ord_20261009_0003",
-      "orderDate": "2026-10-09T18:03:00Z",
+      "orderId": 202610090003,
+      "orderDate": { "$date": "2026-10-09T18:03:00Z" },
       "status": "processing",
       "items": [
         { "productId": "prod_102", "name": "Laptop Sleeve (14in)", "quantity": 1, "unitPrice": 899.0 },
