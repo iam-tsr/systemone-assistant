@@ -15,11 +15,9 @@ def guardrail(state: str):
     malicious_code = result["answers"]["malicious_code"]["noul"]
 
     # Hard safety block: never routed, never answered.
-    risk_score = 1 if (jail_break > 0.7 or malicious_code > 0.7) else 0
+    risk_score = 1 if (jail_break > 0.8 or malicious_code > 0.8) else 0
 
     churn_risk = result["answers"]["churn_risk"]["noul"]
-
-    print(f"\n\nGuardrail: risk_score={risk_score}, jail_break={jail_break:.2f}, malicious_code={malicious_code:.2f}, churn_risk={churn_risk:.2f}")
 
     return {
         "risk_score": risk_score,
