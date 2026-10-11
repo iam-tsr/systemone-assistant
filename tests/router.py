@@ -1,4 +1,4 @@
-from systemone_assistant.src.router import _route
+from systemone_assistant.src.tool_route import route
 
 def test_route() -> None:
     state1 = [
