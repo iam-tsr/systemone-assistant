@@ -6,8 +6,8 @@ ACTIONS = {
     "order_status": "Customer asks about the status, location, or delivery date of an order.",
     "cancel_order": "Customer asks to cancel an order.",
     "change_address": "Customer asks to change the shipping address of an order.",
-    "escalate_to_human": "If the customer is angry, frustrated, or threatening to leave, escalate to a human agent.",
-    "chitchat": "Greeting, thanks, or small talk such as 'hi', 'hey', or 'thanks' with no request.",
+    "greeting": "Greeting, thanks, or small talk such as 'hi', 'hey', or 'thanks' with no request.",
+    "other": "Everything else that doesn't fit into the other categories.",
 }
 
 DEPARTMENT_CRITERIA = {

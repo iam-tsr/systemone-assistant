@@ -1,16 +1,11 @@
-"""Connection settings for the laya-serve `/v1/systemone` endpoint.
-
-Read from the environment at call time:
-  LAYA_BASE_URL   server origin, e.g. http://localhost:8000
-  LAYA_API_KEY    bearer token, required only if the server sets LAYA_API_KEY
-  LAYA_MODEL      Jev model id, default "jev-latest" (lets the server auto-route)
-"""
 import os
+from dotenv import load_dotenv
 from dataclasses import dataclass
 from typing import Any
 
 import httpx
 
+load_dotenv()
 
 @dataclass(frozen=True)
 class SystemOneConfig:
@@ -21,9 +16,9 @@ class SystemOneConfig:
 
 def systemone_config() -> SystemOneConfig:
     return SystemOneConfig(
-        base_url=os.environ.get("LAYA_BASE_URL", "http://localhost:8000").rstrip("/"),
-        api_key=os.environ.get("LAYA_API_KEY") or None,
-        model=os.environ.get("LAYA_MODEL", "jev-latest"),
+        base_url=os.environ.get("JEV_BASE_URL").rstrip("/"),
+        api_key=os.environ.get("JEV_API_KEY"),
+        model=os.environ.get("JEV_MODEL"),
     )
 
 

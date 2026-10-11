@@ -1,15 +1,11 @@
-"""Minimal client for OpenAI-compatible chat endpoints (SLM for extraction, LLM for replies).
-
-Endpoints are read from the environment at call time:
-  SLM_BASE_URL / SLM_API_KEY / SLM_MODEL
-  LLM_BASE_URL / LLM_API_KEY / LLM_MODEL
-"""
 import os
+from dotenv import load_dotenv
 from dataclasses import dataclass
 from typing import Any
 
 import httpx
 
+load_dotenv()
 
 @dataclass(frozen=True)
 class Endpoint:
@@ -20,17 +16,17 @@ class Endpoint:
 
 def slm_endpoint() -> Endpoint:
     return Endpoint(
-        base_url=os.environ.get("SLM_BASE_URL", "http://localhost:8080/v1").rstrip("/"),
-        api_key=os.environ.get("SLM_API_KEY", "EMPTY"),
-        model=os.environ.get("SLM_MODEL", "slm"),
+        base_url=os.environ.get("SLM_BASE_URL").rstrip("/"),
+        api_key=os.environ.get("SLM_API_KEY"),
+        model=os.environ.get("SLM_MODEL"),
     )
 
 
 def llm_endpoint() -> Endpoint:
     return Endpoint(
-        base_url=os.environ.get("LLM_BASE_URL", "http://localhost:8080/v1").rstrip("/"),
-        api_key=os.environ.get("LLM_API_KEY", "EMPTY"),
-        model=os.environ.get("LLM_MODEL", "llm"),
+        base_url=os.environ.get("LLM_BASE_URL").rstrip("/"),
+        api_key=os.environ.get("LLM_API_KEY"),
+        model=os.environ.get("LLM_MODEL"),
     )
 
 
