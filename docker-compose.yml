@@ -1,0 +1,18 @@
+version: '1.0'
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: systemone-mongo
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_DB}
+    volumes:
+      - systemone-data:/data/db
+    restart: unless-stopped
+
+volumes:
+  systemone-data:

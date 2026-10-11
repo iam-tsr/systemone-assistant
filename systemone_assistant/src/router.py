@@ -17,7 +17,7 @@ DEPARTMENT_CRITERIA = {
     "other": "everything else",
 }
 
-def _route(message: str) -> dict[str, Any]:
+def route(message: str) -> dict[str, Any]:
     """Laya picks one action and one department in a single forward pass."""
     questions = {
         "action": {
