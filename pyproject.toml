@@ -14,5 +14,6 @@ dependencies = [
     "langchain-openai>=1.7.0",
     "langgraph>=1.2.14",
     "langgraph-checkpoint-mongodb>=0.5.1",
+    "pydantic-settings>=2.15.0",
     "pymongo>=4.18.3",
 ]

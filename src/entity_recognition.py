@@ -1,12 +1,11 @@
-import os
 from typing import Optional
 from pydantic import BaseModel, Field
-from dotenv import load_dotenv
 
 from langchain.agents import create_agent
 from langchain.agents.structured_output import ToolStrategy
 
-load_dotenv()
+from .config import client
+
 
 class EntityRecognition(BaseModel):
     """A Pydantic model for the structured response of the entity recognition."""
@@ -20,7 +19,7 @@ class EntityRecognition(BaseModel):
     )
 
 agent = create_agent(
-    model=os.environ.get("OPENAI_MODEL"),
+    model=client(),
     response_format=ToolStrategy(
         schema=EntityRecognition,
         tool_message_content="Entity recognized and extracted successfully!"

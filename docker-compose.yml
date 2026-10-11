@@ -7,9 +7,9 @@ services:
     ports:
       - "27017:27017"
     environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
-      MONGO_INITDB_DATABASE: ${MONGO_DB}
+      MONGO_INITDB_ROOT_USERNAME: ${SERVER_MONGO_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${SERVER_MONGO_PASSWORD}
+      MONGO_INITDB_DATABASE: ${SERVER_MONGO_DATABASE}
     volumes:
       - systemone-data:/data/db
     restart: unless-stopped

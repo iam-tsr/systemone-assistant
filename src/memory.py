@@ -4,14 +4,14 @@ from dotenv import load_dotenv
 from langgraph.checkpoint.mongodb import MongoDBSaver
 from langgraph.graph import START, MessagesState, StateGraph
 
-from .config import client
+from .config import client, mongodb_settings
 
 load_dotenv()
 
 model = client()
 
-MONGODB_ATLAS_URI = os.environ["MONGO_URI"]
-DATABASE_NAME = os.environ["MONGO_DB"]
+MONGODB_ATLAS_URI = mongodb_settings.uri
+DATABASE_NAME = mongodb_settings.database
 
 
 def call_model(state: MessagesState) -> dict:
