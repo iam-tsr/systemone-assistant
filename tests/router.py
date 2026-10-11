@@ -1,4 +1,4 @@
-from systemone_assistant.src.tool_route import route
+from src.tool_route import route
 
 def test_route() -> None:
     state1 = [
@@ -9,7 +9,7 @@ def test_route() -> None:
     ]
     state2 = [{"HumanMessage": "Hi"}]
     state3 = [{"HumanMessage": "I ordered a product but it hasn't arrived yet. Can you tell me when it will be delivered?"}]
-    return _route(state3)
+    return route(state3)
 
 if __name__ == "__main__":
     test_route()

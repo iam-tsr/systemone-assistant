@@ -44,17 +44,11 @@ def get_chat_history(thread_id: int) -> list:
         config = {"configurable": {"thread_id": thread_id}}
         # Get the current state of the graph
         snap = graph.get_state(config)
+        return [{type(m).__name__: m.content} for m in snap.values.get("messages", [])]
 
-        history = []
-        for m in snap.values.get("messages", []):
-            # print("-", type(m).__name__, ":", m.content)
-            history.append(m.content)
-
-        return history
 
 def clear_chat_history(thread_id: int) -> None:
     """Clear the chat history for a given thread ID in the MongoDB database."""
     with MongoDBSaver.from_conn_string(MONGODB_ATLAS_URI, DATABASE_NAME) as checkpointer:
-        config = {"configurable": {"thread_id": thread_id}}
         # Delete the thread from the database
-        checkpointer.delete_thread(config)
+        checkpointer.delete_thread(str(thread_id))
