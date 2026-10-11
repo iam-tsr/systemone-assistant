@@ -1,9 +1,35 @@
-"""Entity extraction with the SLM (OpenAI-compatible). Returns only the fields the chosen action needs."""
-from typing import Any
+import os
+from typing import Optional
+from pydantic import BaseModel, Field
+from dotenv import load_dotenv
 
-from .config import client
-from .prompt import ENTITY_SYSTEM_PROMPT
+from langchain.agents import create_agent
+from langchain.agents.structured_output import ToolStrategy
 
+load_dotenv()
 
-def extract_entities(message: str) -> dict[str, Any]:
-    pass
+class EntityRecognition(BaseModel):
+    """A Pydantic model for the structured response of the entity recognition."""
+    order_id: Optional[int] = Field(
+        default=None,
+        description="The order ID associated with the person"
+    )
+    address: Optional[str] = Field(
+        default=None,
+        description="The address of the person"
+    )
+
+agent = create_agent(
+    model=os.environ.get("OPENAI_MODEL"),
+    response_format=ToolStrategy(
+        schema=EntityRecognition,
+        tool_message_content="Entity recognized and extracted successfully!"
+    )
+)
+
+def extract_entity(text: str) -> EntityRecognition:
+    """Extract contact information from the given text."""
+    response = agent.invoke({
+        "messages": [{"role": "user", "content": text}]
+    })
+    return dict(response['structured_response'])
