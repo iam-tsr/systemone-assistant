@@ -34,6 +34,13 @@ class MongoDBSettings(BaseSettings):
     database: str
 
 
+class GnaniSettings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", env_prefix="GNANI_", extra="ignore")
+
+    api_key: str
+
+
 systemone_settings = SystemOneSettings()
 openai_settings = OpenAISettings()
 mongodb_settings = MongoDBSettings()
+gnani_settings = GnaniSettings()
