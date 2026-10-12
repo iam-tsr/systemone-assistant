@@ -10,7 +10,7 @@ ACTIONS = {
     "other": "Everything else that doesn't fit into the other categories.",
 }
 
-def systemone_route(message: str) -> dict[str, Any]:
+def systemone_route(conversation: str) -> dict[str, Any]:
     """Laya picks one action and one department in a single forward pass."""
     questions = {
         "action": {
@@ -19,7 +19,7 @@ def systemone_route(message: str) -> dict[str, Any]:
             "criteria": ACTIONS,
         },
     }
-    result = systemone_predict(message, questions)
+    result = systemone_predict(conversation, questions)
     action = result["answers"]["action"]
     return {
         "action": action["choice"],
@@ -37,15 +37,15 @@ from .config import client
 
 class RouteDecision(BaseModel):
     """A fallback routing method to route the user's inquiry to the most relevant tool."""
-    keys: ClassVar[list[str]] = ['order_status', 'cancel_order', 'change_address', 'greeting', 'escalate_to_human']
+    # keys = ['order_status', 'cancel_order', 'change_address', 'greeting', 'escalate_to_human']
     action: str = Field(
-        description=f"Must be exactly one of: {keys}"
+        description=f"Must be exactly one of: {ACTIONS.keys()}"
     )
     action_confidence: float = Field(
         description="A confidence score between 0 and 1 indicating how confident the model is in its action choice."
     )
 
-def llm_route(message: str) -> dict[str, Any]:
+def slm_route(conversation: str) -> dict[str, Any]:
     """Route the user's inquiry to the most relevant tool using a language model."""
 
     agent = create_agent(
@@ -56,5 +56,5 @@ def llm_route(message: str) -> dict[str, Any]:
         )
     )        
 
-    result = agent.invoke({"messages": [{"role": "user", "content": message}]})
-    return result['structured_response'].model_dump()
+    result = agent.invoke({"messages": [{"role": "user", "content": conversation}]})
+    return dict(result['structured_response'])

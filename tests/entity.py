@@ -5,5 +5,5 @@ query = [{'HumanMessage': 'I want to change my address for order 12345 to 456 Ne
 output = extract_entity(query)
 print(output)
 
-# output = fast_entity_recon(query)
-# print(output) # 85% confidence need to verify the output.
+output = fast_entity_recon(query)
+print(output) # 85% confidence need to verify the output.

@@ -35,39 +35,51 @@ class OrderMongoDBHandler:
         file, not the full user. Upserts by orderId, so reloading the file does
         not create duplicates. Returns the number of orders loaded.
         """
-        data = json_util.loads(ORDERS_FILE.read_text())
-        user_id = ObjectId(data["user"]["userId"]["$ObjectId"])
-        operations = [
-            ReplaceOne({"orderId": order["orderId"]}, {"orderId": order["orderId"], "userId": user_id, **{k: v for k, v in order.items() if k != "orderId"}}, upsert=True)
-            for order in data["orders"]
-        ]
-        if operations:
-            self.collection.bulk_write(operations)
-        return len(operations)
+        try:
+            data = json_util.loads(ORDERS_FILE.read_text())
+            user_id = ObjectId(data["user"]["userId"]["$ObjectId"])
+            operations = [
+                ReplaceOne({"orderId": order["orderId"]}, {"orderId": order["orderId"], "userId": user_id, **{k: v for k, v in order.items() if k != "orderId"}}, upsert=True)
+                for order in data["orders"]
+            ]
+            if operations:
+                self.collection.bulk_write(operations)
+            return len(operations)
+        except Exception as e:
+            print(f"Error loading orders: {e}")
+            return 0
 
     def order_status(self, order_id: str) -> dict | None:
         """Return the status, items, and delivery date (if set) of an order.
 
         Returns None when no order has the given orderId.
         """
-        order = self.collection.find_one(
-            {"orderId": order_id},
-            {"_id": 0, "status": 1, "items": 1, "deliveryDate": 1},
-        )
-        if order is None:
+        try:
+            order = self.collection.find_one(
+                {"orderId": order_id},
+                {"_id": 0, "status": 1, "items": 1, "deliveryDate": 1},
+            )
+            if order is None:
+                return None
+            return order
+        except Exception as e:
+            print(f"Error fetching order status: {e}")
             return None
-        return order
 
     def update_address(self, order_id: str, shipping_address: str) -> bool:
         """Replace the shipping address of an order.
 
         Returns True if an order with the given orderId was matched.
         """
-        result = self.collection.update_one(
-            {"orderId": order_id},
-            {"$set": {"shippingAddress": shipping_address}},
-        )
-        return result.matched_count == 1
+        try:
+            result = self.collection.update_one(
+                {"orderId": order_id},
+                {"$set": {"shippingAddress": shipping_address}},
+            )
+            return result.matched_count == 1
+        except Exception as e:
+            print(f"Error updating shipping address: {e}")
+            return False
 
     def cancel_order(self, order_id: str) -> bool:
         """Mark an order as cancelled and remove its expected and delivery dates.
@@ -86,6 +98,9 @@ class OrderMongoDBHandler:
 
     def close_connection(self):
         """Close the MongoDB connection"""
-        self.client.close()
-        print("MongoDB connection closed")
-    
+        try:
+            self.client.close()
+            return True
+        except Exception as e:
+            print(f"Error closing MongoDB connection: {e}")
+            return False
