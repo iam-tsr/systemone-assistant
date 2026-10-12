@@ -66,6 +66,7 @@ def _run_operation(action: str, message: str, conversation: list[dict]) -> str |
 
     # Order actions: recon -> extract -> validate -> execute.
     entities = _extract_query_entities(conversation)
+    print(f"Extracted entities: {entities}")
     order_id = entities.get("order_id") if entities else None
     if not order_id:
         return "Missing required information: order_id."

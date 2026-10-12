@@ -69,11 +69,14 @@ class OrderMongoDBHandler:
     def update_address(self, order_id: str, shipping_address: str) -> bool:
         """Replace the shipping address of an order.
 
-        Returns True if an order with the given orderId was matched.
+        Only orders still in 'processing' can have their address changed. Orders in any
+        other status are left untouched.
+
+        Returns True if the address of an order was updated.
         """
         try:
             result = self.collection.update_one(
-                {"orderId": order_id},
+                {"orderId": order_id, "status": "processing"},
                 {"$set": {"shippingAddress": shipping_address}},
             )
             return result.matched_count == 1
@@ -81,19 +84,24 @@ class OrderMongoDBHandler:
             print(f"Error updating shipping address: {e}")
             return False
 
+    CANCELLABLE_STATUSES = ("processing", "shipped")
+
     def cancel_order(self, order_id: str) -> bool:
         """Mark an order as cancelled and remove its expected and delivery dates.
 
-        Returns True if an order with the given orderId was matched.
+        Only orders still in a cancellable status are updated. Delivered or already
+        cancelled orders are left untouched.
+
+        Returns True if an order with the given orderId was cancelled.
         """
         result = self.collection.update_one(
-            {"orderId": order_id},
+            {"orderId": order_id, "status": {"$in": list(self.CANCELLABLE_STATUSES)}},
             {
                 "$set": {"status": "cancelled"},
                 "$unset": {"expectedDeliveryDate": "", "deliveryDate": ""},
             },
         )
-        return result.matched_count == 1
+        return result.modified_count == 1
 
 
     def close_connection(self):
