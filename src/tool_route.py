@@ -57,4 +57,4 @@ def llm_route(message: str) -> dict[str, Any]:
     )        
 
     result = agent.invoke({"messages": [{"role": "user", "content": message}]})
-    return dict(result['structured_response'])
+    return result['structured_response'].model_dump()

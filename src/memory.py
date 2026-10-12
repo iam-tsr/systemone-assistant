@@ -1,8 +1,9 @@
 from langgraph.checkpoint.mongodb import MongoDBSaver
 from langgraph.graph import START, MessagesState, StateGraph
+from langchain_core.messages import HumanMessage, SystemMessage
 
 from .config import client, mongodb_settings
-
+from .prompt import GEN_SYSTEM_PROMPT
 
 
 model = client()
@@ -25,13 +26,16 @@ def _thread_config(thread_id: int) -> dict:
     return {"configurable": {"thread_id": thread_id}}
 
 
-def chat(thread_id: int, messages: str) -> str:
+def chat(thread_id: int, message: str) -> str:
     """Send a user message on the given thread and return the model's reply text."""
-    user_message = {"role": "user", "content": messages}
+    messages = [
+        SystemMessage(content=GEN_SYSTEM_PROMPT),
+        HumanMessage(content=message),
+    ]
 
     with MongoDBSaver.from_conn_string(MONGODB_ATLAS_URI, DATABASE_NAME) as checkpointer:
         graph = builder.compile(checkpointer=checkpointer)
-        result = graph.invoke({"messages": [user_message]}, _thread_config(thread_id))
+        result = graph.invoke({"messages": messages}, _thread_config(thread_id))
 
     return result["messages"][-1].content
 

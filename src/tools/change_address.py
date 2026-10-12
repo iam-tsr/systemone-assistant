@@ -15,6 +15,7 @@ async def change_address(orderid: str, new_address: str) -> str:
         str: A confirmation message.
     """
 
+    order_handler = None
     try:
         order_handler = OrderMongoDBHandler()
         result = order_handler.update_address(orderid, new_address)
@@ -26,4 +27,5 @@ async def change_address(orderid: str, new_address: str) -> str:
     except Exception as e:
         return f"An error occurred while trying to change the address: {str(e)}"
     finally:
-        order_handler.close_connection()
+        if order_handler is not None:
+            order_handler.close_connection()

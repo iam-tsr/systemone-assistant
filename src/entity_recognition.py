@@ -1,9 +1,6 @@
 from typing import Optional, List
 from pydantic import BaseModel, Field
 
-from langchain.agents import create_agent
-from langchain.agents.structured_output import ToolStrategy
-
 from .config import client, systemone_predict
 
 
@@ -24,13 +21,7 @@ class EntityRecognition(BaseModel):
         description="All orders mentioned in the conversation, with associated address information if available."
     )
 
-agent = create_agent(
-    model=client(),
-    response_format=ToolStrategy(
-        schema=EntityRecognition,
-        tool_message_content="Extract all order entities from the conversation."
-    )
-)
+_extractor = client().with_structured_output(EntityRecognition, method="function_calling")
 
 def extract_entity(conversation: list[dict]) -> EntityRecognition:
     transcript = _conversation_to_text(conversation)
@@ -49,18 +40,9 @@ def extract_entity(conversation: list[dict]) -> EntityRecognition:
         {transcript}
     """.strip()
 
-    response = agent.invoke(
-        {
-            "messages": [
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ]
-        }
-    )
-
-    output = EntityRecognition.model_validate(response["structured_response"])
+    output = _extractor.invoke(prompt)
+    if output is None:
+        return None
     return _clean_order_entities(output.orders)
 
 def _conversation_to_text(conversation: list[dict]) -> str:

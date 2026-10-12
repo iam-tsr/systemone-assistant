@@ -10,10 +10,10 @@ from .tools.cancel_order import cancel_order
 from .tools.change_address import change_address
 from .tools.escalate_to_human import escalate_to_human
 
-REFUSAL = "I'm sorry, but I cannot assist with that request."
+
 
 ROUTE_CONFIDENCE = 0.85
-ENTITY_CONFIDENCE = 0.85
+ENTITY_PRECHECK_FLOOR = 0.5
 
 # Actions systemone_route may decide on alone when confident.
 SYSTEMONE_ACTIONS = {"order_status", "cancel_order", "change_address", "greeting"}
@@ -29,7 +29,7 @@ def handle_message(message: str) -> dict:
     guard = guardrail(message)
     if guard["risk_score"] == 1:
         # Blocked messages are not stored in memory.
-        return {"reply": REFUSAL, "action": "blocked"}
+        return {"reply": "I'm sorry, but I cannot assist with that request.", "action": "blocked"}
 
     conversation = [*get_chat_history(thread_id), {"HumanMessage": message}]
 
@@ -79,9 +79,11 @@ def _run_operation(action: str, message: str, conversation: list[dict]) -> str |
 
 
 def _extract_order_entities(conversation: list[dict]) -> dict | None:
-    """Cheap presence check first; run the full extractor only when an entity is likely present."""
+    """Cheap recon pre-check; the extractor decides. Recon scores are not reliable enough
+    for a hard cutoff (real order IDs score ~0.76), so skip extraction only when recon is
+    confidently negative."""
     recon = fast_entity_recon(conversation)
-    if max(recon["order_id"], recon["new_address"]) < ENTITY_CONFIDENCE:
+    if max(recon["order_id"], recon["new_address"]) < ENTITY_PRECHECK_FLOOR:
         return None
     return extract_entity(conversation)
 

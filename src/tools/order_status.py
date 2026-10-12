@@ -15,6 +15,7 @@ async def order_status(orderid: str) -> str:
         str: A message indicating the status of the order.
     """
 
+    order_handler = None
     try:
         # Create an instance of the OrderMongoDBHandler
         order_handler = OrderMongoDBHandler()
@@ -31,4 +32,5 @@ async def order_status(orderid: str) -> str:
         return f"An error occurred while trying to check the order status: {str(e)}"
     finally:
         # Ensure the database connection is closed
-        order_handler.close_connection()
+        if order_handler is not None:
+            order_handler.close_connection()

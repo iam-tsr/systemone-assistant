@@ -14,6 +14,7 @@ async def cancel_order(orderid: str) -> str:
         str: A confirmation message.
     """
 
+    order_handler = None
     try:
         # Create an instance of the OrderMongoDBHandler
         order_handler = OrderMongoDBHandler()
@@ -29,4 +30,5 @@ async def cancel_order(orderid: str) -> str:
     except Exception as e:
         return f"An error occurred while trying to cancel the order: {str(e)}"
     finally:
-        order_handler.close_connection()
+        if order_handler is not None:
+            order_handler.close_connection()

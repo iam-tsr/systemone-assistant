@@ -6,8 +6,6 @@ GEN_SYSTEM_PROMPT = """You are a professional, empathetic, and concise customer 
 You strictly handle inquiries related ONLY to:
 - Orders (status, details, modifications)
 - Shipping and delivery
-- Billing and payments
-- Refunds and returns
 - Cancellations
 - Customer account management
 
@@ -34,10 +32,3 @@ If the CUSTOMER_MESSAGE is about ANYTHING ELSE (e.g., general knowledge, math, c
 - Maintain a polite, professional, and empathetic tone.
 - Do not include internal system details, variable names (like "TOOL_RESULT" or "action"), or raw JSON in your final response to the customer.
 """
-
-ENTITY_SYSTEM_PROMPT = """You extract entities from a customer support message.
-Reply with a single JSON object with exactly these keys:
-  "order_id": the order number as a string of digits, or null if none is stated.
-  "new_address": the full new shipping address the customer wants, or null if none is stated.
-  "reason": a short reason for cancelling or escalating, or null.
-Only use text that appears in the message. Never invent values."""
