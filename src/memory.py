@@ -1,12 +1,9 @@
-import os
-
-from dotenv import load_dotenv
 from langgraph.checkpoint.mongodb import MongoDBSaver
 from langgraph.graph import START, MessagesState, StateGraph
 
 from .config import client, mongodb_settings
 
-load_dotenv()
+
 
 model = client()
 

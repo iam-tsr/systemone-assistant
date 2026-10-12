@@ -1,5 +1,9 @@
-from src.entity_recognition import extract_entity
+from src.entity_recognition import extract_entity, fast_entity_recon
 
-output = extract_entity("I want to cancel my order. My order ID is 12345.")
+query = "here it is 12345."
 
+output = extract_entity(query)
 print(output)
+
+output = fast_entity_recon([query])
+print(output) # 85% confidence need to verify the output.

@@ -1,4 +1,4 @@
-from .config.systemone import systemone_predict
+from .config import systemone_predict
 
 
 def guardrail(state: str):
