@@ -9,7 +9,7 @@ model = client()
 
 MONGODB_ATLAS_URI = mongodb_settings.uri
 DATABASE_NAME = mongodb_settings.database
-
+COLLECTION_NAME = mongodb_settings.collection
 
 def call_model(state: MessagesState) -> dict:
     """Graph node: send the conversation so far to the model and append its reply."""
@@ -30,7 +30,7 @@ def chat(thread_id: int, messages: str) -> str:
     """Send a user message on the given thread and return the model's reply text."""
     user_message = {"role": "user", "content": messages}
 
-    with MongoDBSaver.from_conn_string(MONGODB_ATLAS_URI, DATABASE_NAME) as checkpointer:
+    with MongoDBSaver.from_conn_string(MONGODB_ATLAS_URI, DATABASE_NAME, COLLECTION_NAME) as checkpointer:
         graph = builder.compile(checkpointer=checkpointer)
         result = graph.invoke({"messages": [user_message]}, _thread_config(thread_id))
 

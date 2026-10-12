@@ -32,6 +32,7 @@ class MongoDBSettings(BaseSettings):
 
     uri: str
     database: str
+    collection: str
 
 
 systemone_settings = SystemOneSettings()
