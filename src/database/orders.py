@@ -45,6 +45,45 @@ class OrderMongoDBHandler:
             self.collection.bulk_write(operations)
         return len(operations)
 
+    def order_status(self, order_id: str) -> dict | None:
+        """Return the status, items, and delivery date (if set) of an order.
+
+        Returns None when no order has the given orderId.
+        """
+        order = self.collection.find_one(
+            {"orderId": order_id},
+            {"_id": 0, "status": 1, "items": 1, "deliveryDate": 1},
+        )
+        if order is None:
+            return None
+        return order
+
+    def update_address(self, order_id: str, shipping_address: dict) -> bool:
+        """Replace the shipping address of an order.
+
+        Returns True if an order with the given orderId was matched.
+        """
+        result = self.collection.update_one(
+            {"orderId": order_id},
+            {"$set": {"shippingAddress": shipping_address}},
+        )
+        return result.matched_count == 1
+
+    def cancel_order(self, order_id: str) -> bool:
+        """Mark an order as cancelled and remove its expected and delivery dates.
+
+        Returns True if an order with the given orderId was matched.
+        """
+        result = self.collection.update_one(
+            {"orderId": order_id},
+            {
+                "$set": {"status": "cancelled"},
+                "$unset": {"expectedDeliveryDate": "", "deliveryDate": ""},
+            },
+        )
+        return result.matched_count == 1
+
+
     def close_connection(self):
         """Close the MongoDB connection"""
         self.client.close()

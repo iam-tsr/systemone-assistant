@@ -14,13 +14,7 @@
         { "productId": "prod_210", "name": "Wireless Keyboard", "quantity": 1, "unitPrice": 2499.0 },
         { "productId": "prod_345", "name": "USB-C Cable (2m)", "quantity": 2, "unitPrice": 499.0 }
       ],
-      "shippingAddress": {
-        "street": "12 MG Road, Indiranagar",
-        "city": "Bengaluru",
-        "state": "Karnataka",
-        "postalCode": "560038",
-        "country": "IN"
-      },
+      "shippingAddress": "12 MG Road, Indiranagar, Bengaluru, Karnataka 560038",
       "paymentMethod": "upi",
       "totalAmount": 3497.0,
       "expectedDeliveryDate": { "$date": "2026-10-05T12:00:00Z" },
@@ -33,13 +27,7 @@
       "items": [
         { "productId": "prod_478", "name": "Noise-Cancelling Headphones", "quantity": 1, "unitPrice": 7999.0 }
       ],
-      "shippingAddress": {
-        "street": "12 MG Road, Indiranagar",
-        "city": "Bengaluru",
-        "state": "Karnataka",
-        "postalCode": "560038",
-        "country": "IN"
-      },
+      "shippingAddress": "12 MG Road, Indiranagar, Bengaluru, Karnataka 560038",
       "paymentMethod": "credit_card",
       "totalAmount": 7999.0,
       "expectedDeliveryDate": { "$date": "2026-10-12T18:00:00Z" }
@@ -52,13 +40,7 @@
         { "productId": "prod_102", "name": "Laptop Sleeve (14in)", "quantity": 1, "unitPrice": 899.0 },
         { "productId": "prod_587", "name": "Ergonomic Mouse", "quantity": 1, "unitPrice": 1299.0 }
       ],
-      "shippingAddress": {
-        "street": "12 MG Road, Indiranagar",
-        "city": "Bengaluru",
-        "state": "Karnataka",
-        "postalCode": "560038",
-        "country": "IN"
-      },
+      "shippingAddress": "12 MG Road, Indiranagar, Bengaluru, Karnataka 560038",
       "paymentMethod": "net_banking",
       "totalAmount": 2198.0,
       "expectedDeliveryDate": { "$date": "2026-10-15T15:00:00Z" }
