@@ -58,7 +58,7 @@ class OrderMongoDBHandler:
             return None
         return order
 
-    def update_address(self, order_id: str, shipping_address: dict) -> bool:
+    def update_address(self, order_id: str, shipping_address: str) -> bool:
         """Replace the shipping address of an order.
 
         Returns True if an order with the given orderId was matched.
