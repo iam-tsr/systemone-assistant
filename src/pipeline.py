@@ -15,7 +15,7 @@ from .tools import (
 
 
 ROUTE_CONFIDENCE = 0.85
-ENTITY_PRECHECK_FLOOR = 0.5
+ENTITY_PRECHECK_FLOOR = 0.7
 
 thread_id = str(uuid4())
 
