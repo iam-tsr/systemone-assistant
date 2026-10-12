@@ -20,14 +20,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from pymongo import MongoClient  # noqa: E402
 
-import src.pipeline as pipeline  # noqa: E402
-from src.config import mongodb_settings  # noqa: E402
-from src.memory import clear_chat_history  # noqa: E402
-from src.pipeline import REFUSAL  # noqa: E402
-from src.tools.cancel_order import cancel_order  # noqa: E402
-from src.tools.change_address import change_address  # noqa: E402
-from src.tools.escalate_to_human import escalate_to_human  # noqa: E402
-from src.tools.order_status import order_status  # noqa: E402
+import backend.pipeline as pipeline  # noqa: E402
+from backend.config import mongodb_settings  # noqa: E402
+from backend.memory import clear_chat_history  # noqa: E402
+from backend.pipeline import REFUSAL  # noqa: E402
+from backend.tools.cancel_order import cancel_order  # noqa: E402
+from backend.tools.change_address import change_address  # noqa: E402
+from backend.tools.escalate_to_human import escalate_to_human  # noqa: E402
+from backend.tools.order_status import order_status  # noqa: E402
 
 ORD1 = "ORD-2026-00001"  # delivered
 ORD2 = "ORD-2026-00002"  # shipped

@@ -1,4 +1,4 @@
-from src.database import OrderMongoDBHandler
+from backend.database import OrderMongoDBHandler
 
 
 def check_orders():
