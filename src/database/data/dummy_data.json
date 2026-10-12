@@ -1,13 +1,13 @@
 {
   "user": {
-    "userId": "usr_1001",
+    "userId": {"$ObjectId": "507f1f77bcf86cd799439011"},
     "name": "Tushar Soni",
     "email": "tushar.soni@example.in",
     "phone": "+91-9876543210"
   },
   "orders": [
     {
-      "orderId": { "$ObjectId": "202610010001" },
+      "orderId": "ORD-2026-00001",
       "orderDate": { "$date": "2026-10-01T09:15:00Z" },
       "status": "delivered",
       "items": [
@@ -22,10 +22,12 @@
         "country": "IN"
       },
       "paymentMethod": "upi",
-      "totalAmount": 3497.0
+      "totalAmount": 3497.0,
+      "expectedDeliveryDate": { "$date": "2026-10-05T12:00:00Z" },
+      "deliveryDate": { "$date": "2026-10-03T16:30:00Z" }
     },
     {
-      "orderId": { "$ObjectId": "202610050002" },
+      "orderId": "ORD-2026-00002",
       "orderDate": { "$date": "2026-10-05T14:42:00Z" },
       "status": "shipped",
       "items": [
@@ -39,10 +41,11 @@
         "country": "IN"
       },
       "paymentMethod": "credit_card",
-      "totalAmount": 7999.0
+      "totalAmount": 7999.0,
+      "expectedDeliveryDate": { "$date": "2026-10-12T18:00:00Z" }
     },
     {
-      "orderId": { "$ObjectId": "202610090003" },
+      "orderId": "ORD-2026-00003",
       "orderDate": { "$date": "2026-10-09T18:03:00Z" },
       "status": "processing",
       "items": [
@@ -57,7 +60,8 @@
         "country": "IN"
       },
       "paymentMethod": "net_banking",
-      "totalAmount": 2198.0
+      "totalAmount": 2198.0,
+      "expectedDeliveryDate": { "$date": "2026-10-15T15:00:00Z" }
     }
   ]
 }

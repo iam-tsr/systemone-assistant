@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from bson import json_util
+from bson import ObjectId, json_util
 from pymongo import MongoClient, ReplaceOne
 from pymongo.errors import ConnectionFailure
 
@@ -31,11 +31,19 @@ class OrderMongoDBHandler:
     def load_orders(self) -> int:
         """Load dummy data into the collection, one document per order.
 
-        Each order document embeds the user block from the file. Upserts by
-        orderId, so reloading the file does not create duplicates.
-        Returns the number of orders loaded.
+        Each order document carries only the userId of the user block from the
+        file, not the full user. Upserts by orderId, so reloading the file does
+        not create duplicates. Returns the number of orders loaded.
         """
-        pass
+        data = json_util.loads(ORDERS_FILE.read_text())
+        user_id = ObjectId(data["user"]["userId"]["$ObjectId"])
+        operations = [
+            ReplaceOne({"orderId": order["orderId"]}, {"orderId": order["orderId"], "userId": user_id, **{k: v for k, v in order.items() if k != "orderId"}}, upsert=True)
+            for order in data["orders"]
+        ]
+        if operations:
+            self.collection.bulk_write(operations)
+        return len(operations)
 
     def close_connection(self):
         """Close the MongoDB connection"""

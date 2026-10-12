@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from bson import json_util
-from pymongo import MongoClient, ReplaceOne
+from bson import ObjectId, json_util
+from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 
 from ..config import mongodb_settings
@@ -31,11 +31,14 @@ class UserMongoDBHandler:
     def load_users(self) -> int:
         """Load dummy data into the collection, one document per user.
 
-        Each user document embeds the user block from the file. Upserts by
-        userId, so reloading the file does not create duplicates.
-        Returns the number of users loaded.
+        Each user document holds only user data (userId, name, email, phone),
+        without orders. Upserts by userId, so reloading the file does not
+        create duplicates. Returns the number of users loaded.
         """
-        pass
+        user = json_util.loads(ORDERS_FILE.read_text())["user"]
+        user_doc = {**user, "userId": ObjectId(user["userId"]["$ObjectId"])}
+        self.collection.replace_one({"userId": user_doc["userId"]}, user_doc, upsert=True)
+        return 1
 
     def close_connection(self):
         """Close the MongoDB connection"""
