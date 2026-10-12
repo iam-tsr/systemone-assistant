@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, ClassVar
 from .config import systemone_predict
 
 
@@ -37,8 +37,9 @@ from .config import client
 
 class RouteDecision(BaseModel):
     """A fallback routing method to route the user's inquiry to the most relevant tool."""
+    keys: ClassVar[list[str]] = ['order_status', 'cancel_order', 'change_address', 'greeting', 'escalate_to_human']
     action: str = Field(
-        description=f"Must be exactly one of: {ACTIONS.keys()}"
+        description=f"Must be exactly one of: {keys}"
     )
     action_confidence: float = Field(
         description="A confidence score between 0 and 1 indicating how confident the model is in its action choice."

@@ -19,7 +19,7 @@ async def cancel_order(orderid: str) -> str:
         order_handler = OrderMongoDBHandler()
 
         # Cancel the order using the provided order ID
-        result = await order_handler.cancel_order(orderid)
+        result = order_handler.cancel_order(orderid)
 
         if result:
             return f"Order {orderid} has been successfully canceled."

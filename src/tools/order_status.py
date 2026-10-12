@@ -20,7 +20,7 @@ async def order_status(orderid: str) -> str:
         order_handler = OrderMongoDBHandler()
 
         # Retrieve the order status using the provided order ID
-        status = await order_handler.get_order_status(orderid)
+        status = order_handler.order_status(orderid)
 
         if status:
             return f"The status of order {orderid} is: {status}"

@@ -8,7 +8,7 @@ from .config import client, systemone_predict
 
 
 class OrderEntity(BaseModel):
-    order_id: Optional[int] = Field(
+    order_id: Optional[str] = Field(
         default=None,
         description="The order ID mentioned in the conversation."
     )
