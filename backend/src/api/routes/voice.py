@@ -3,37 +3,20 @@ from pathlib import Path
 from urllib.parse import quote
 
 import httpx
-from fastapi import APIRouter, File, Form, HTTPException, Response, UploadFile
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from fastapi import APIRouter, File, HTTPException, Response, UploadFile
 from pymongo.errors import PyMongoError
 
 from gnani.stt.exceptions import APIError as STTAPIError, GnaniSTTError, InvalidAudioError
 from gnani.tts.exceptions import APIError as TTSAPIError, GnaniTTSError
 
 from ...pipeline import handle_message
-from ...voice import DEFAULT_VOICE, ENGLISH_VOICES, synthesize, transcribe
-from ..schemas import TranscriptResponse
+from ...voice import synthesize, transcribe
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-# Extensions the Gnani REST STT endpoint accepts (see SDK docs).
+# Extensions the Gnani REST STT endpoint accepts.
 ALLOWED_AUDIO_EXTENSIONS = {".wav", ".mp3", ".flac", ".ogg", ".m4a", ".aac"}
-
-
-class SpeakRequest(BaseModel):
-    # extra="forbid": a `language` field is rejected rather than silently ignored.
-    model_config = ConfigDict(extra="forbid")
-
-    text: str = Field(min_length=1, max_length=2000)
-    voice: str = DEFAULT_VOICE
-
-    @field_validator("voice")
-    @classmethod
-    def _english_voice_only(cls, value: str) -> str:
-        if value not in ENGLISH_VOICES:
-            raise ValueError(f"Voice must be one of: {', '.join(sorted(ENGLISH_VOICES))}")
-        return value
 
 
 def _read_audio(file: UploadFile) -> tuple[bytes, str]:
@@ -57,9 +40,9 @@ def _transcribe_or_raise(audio: bytes, filename: str) -> str:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
 
-def _synthesize_or_raise(text: str, voice: str) -> bytes:
+def _synthesize_or_raise(text: str) -> bytes:
     try:
-        return synthesize(text, voice=voice)
+        return synthesize(text)
     except TTSAPIError as exc:
         raise HTTPException(status_code=502, detail=f"Gnani TTS returned {exc.status_code}") from exc
     except GnaniTTSError as exc:
@@ -81,19 +64,6 @@ def _handle_message_or_raise(session_id: str, transcript: str) -> dict:
         raise HTTPException(status_code=503, detail="MongoDB is not reachable") from exc
 
 
-@router.post("/voice/stt", response_model=TranscriptResponse)
-def speech_to_text(file: UploadFile = File(...)) -> TranscriptResponse:
-    audio, filename = _read_audio(file)
-    transcript = _transcribe_or_raise(audio, filename)
-    return TranscriptResponse(transcript=transcript, request_id=None)
-
-
-@router.post("/voice/tts", response_class=Response, responses={200: {"content": {"audio/wav": {}}}})
-def text_to_speech(body: SpeakRequest) -> Response:
-    audio = _synthesize_or_raise(body.text, body.voice)
-    return Response(content=audio, media_type="audio/wav")
-
-
 @router.post("/voice/agent/{session_id}", response_class=Response, responses={200: {"content": {"audio/wav": {}}}})
 def voice_agent(session_id: str, file: UploadFile = File(...)) -> Response:
     """One voice turn: user audio -> STT -> pipeline.handle_message -> TTS reply audio.
@@ -107,7 +77,7 @@ def voice_agent(session_id: str, file: UploadFile = File(...)) -> Response:
         raise HTTPException(status_code=422, detail="No speech detected")
 
     result = _handle_message_or_raise(session_id, transcript)
-    reply_audio = _synthesize_or_raise(result["reply"], DEFAULT_VOICE)
+    reply_audio = _synthesize_or_raise(result["reply"])
 
     return Response(
         content=reply_audio,

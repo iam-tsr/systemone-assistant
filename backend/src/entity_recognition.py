@@ -3,7 +3,6 @@ from pydantic import BaseModel, Field
 
 from langchain.agents import create_agent
 from langchain.agents.structured_output import ToolStrategy
-from langchain_core.messages import HumanMessage, SystemMessage
 
 from .config import client, systemone_predict
 

@@ -4,7 +4,7 @@ import { ThemeProvider } from "next-themes";
 import { ProfileMenu } from "@/components/profile-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { VoicePersona } from "@/components/voice-persona";
-import type { VoiceTurn } from "@/lib/use-voice-loop";
+import type { VoiceTurn } from "@/lib/voice";
 
 export default function App() {
   const [turns, setTurns] = useState<VoiceTurn[]>([]);

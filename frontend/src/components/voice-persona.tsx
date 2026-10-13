@@ -18,7 +18,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { personaStateFor, type VoiceTurn, useVoiceLoop } from "@/lib/use-voice-loop";
+import { personaStateFor, type VoiceTurn, useVoiceLoop } from "@/lib/voice";
 
 const states: { state: PersonaState; icon: LucideIcon; label: string }[] = [
   { icon: CircleIcon, label: "Idle", state: "idle" },

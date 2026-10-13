@@ -33,7 +33,3 @@ class OrdersResponse(BaseModel):
 class OrderResponse(BaseModel):
     order: Order
 
-
-class TranscriptResponse(BaseModel):
-    transcript: str
-    request_id: str | None
