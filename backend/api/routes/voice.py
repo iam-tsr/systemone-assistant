@@ -40,7 +40,10 @@ def _read_audio(file: UploadFile) -> tuple[bytes, str]:
     filename = file.filename or "audio.wav"
     if Path(filename).suffix.lower() not in ALLOWED_AUDIO_EXTENSIONS:
         raise HTTPException(status_code=415, detail="Unsupported audio type")
-    return file.file.read(), filename
+    audio = file.file.read()
+    if not audio:
+        raise HTTPException(status_code=400, detail="Audio file is empty")
+    return audio, filename
 
 
 def _transcribe_or_raise(audio: bytes, filename: str) -> str:
@@ -93,7 +96,6 @@ def text_to_speech(body: SpeakRequest) -> Response:
 
 @router.post("/voice/agent", response_class=Response, responses={200: {"content": {"audio/wav": {}}}})
 def voice_agent(file: UploadFile = File(...)) -> Response:
-) -> Response:
     """One voice turn: user audio -> STT -> pipeline.handle_message -> TTS reply audio.
 
     Transcript, reply, and action come back in response headers, percent-encoded

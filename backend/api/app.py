@@ -30,7 +30,7 @@ def create_app(allowed_origins: list[str] | None = None) -> FastAPI:
     # The Next.js dev server calls the API from the browser.
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=allowed_origins or ["http://localhost:3000"],
+        allow_origins=allowed_origins or ["http://localhost:3000", "http://127.0.0.1:27017"],
         allow_methods=["GET", "POST"],
         allow_headers=["*"],
     )

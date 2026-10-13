@@ -6,36 +6,82 @@ import type { PersonaState } from "@/components/ai-elements/persona";
 
 export type VoiceStatus = "idle" | "recording" | "transcribing" | "speaking" | "error";
 
-type TranscriptResult = { transcript: string; request_id: string | null };
-
 async function readError(res: Response): Promise<string> {
   const body = await res.json().catch(() => null);
   return typeof body?.detail === "string" ? body.detail : `Request failed (${res.status})`;
 }
 
-async function transcribeBlob(blob: Blob, filename: string): Promise<string> {
-  const form = new FormData();
-  form.append("file", blob, filename);
-  const res = await fetch("/api/voice/stt", { method: "POST", body: form });
-  if (!res.ok) throw new Error(await readError(res));
-  const data = (await res.json()) as TranscriptResult;
-  return data.transcript;
+function encodeWav(buffer: AudioBuffer): Blob {
+  const channelCount = buffer.numberOfChannels;
+  const frameCount = buffer.length;
+  const wav = new ArrayBuffer(44 + frameCount * channelCount * 2);
+  const view = new DataView(wav);
+  const write = (offset: number, value: string) => {
+    for (let index = 0; index < value.length; index += 1) {
+      view.setUint8(offset + index, value.charCodeAt(index));
+    }
+  };
+  write(0, "RIFF");
+  view.setUint32(4, 36 + frameCount * channelCount * 2, true);
+  write(8, "WAVE");
+  write(12, "fmt ");
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, channelCount, true);
+  view.setUint32(24, buffer.sampleRate, true);
+  view.setUint32(28, buffer.sampleRate * channelCount * 2, true);
+  view.setUint16(32, channelCount * 2, true);
+  view.setUint16(34, 16, true);
+  write(36, "data");
+  view.setUint32(40, frameCount * channelCount * 2, true);
+
+  const channels = Array.from({ length: channelCount }, (_, index) =>
+    buffer.getChannelData(index),
+  );
+  let offset = 44;
+  for (let frame = 0; frame < frameCount; frame += 1) {
+    for (let channel = 0; channel < channelCount; channel += 1) {
+      const sample = Math.max(-1, Math.min(1, channels[channel][frame]));
+      view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7fff, true);
+      offset += 2;
+    }
+  }
+  return new Blob([wav], { type: "audio/wav" });
 }
 
-async function speak(text: string): Promise<void> {
-  const res = await fetch("/api/voice/tts", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text, voice: "Pranav" }),
-  });
+async function toWav(blob: Blob): Promise<Blob> {
+  const context = new AudioContext();
+  try {
+    const buffer = await context.decodeAudioData(await blob.arrayBuffer());
+    return encodeWav(buffer);
+  } finally {
+    await context.close();
+  }
+}
+
+async function requestVoiceAgent(blob: Blob): Promise<{ transcript: string; reply: Blob }> {
+  const form = new FormData();
+  form.append("file", await toWav(blob), "utterance.wav");
+  const res = await fetch("/api/voice/agent", { method: "POST", body: form });
   if (!res.ok) throw new Error(await readError(res));
-  const url = URL.createObjectURL(await res.blob());
+  return {
+    transcript: decodeURIComponent(res.headers.get("X-Transcript") ?? ""),
+    reply: await res.blob(),
+  };
+}
+
+async function playAudio(blob: Blob): Promise<void> {
+  const url = URL.createObjectURL(blob);
   const audio = new Audio(url);
-  await audio.play();
-  await new Promise<void>((resolve) => {
-    audio.onended = () => resolve();
-  });
-  URL.revokeObjectURL(url);
+  try {
+    await audio.play();
+    await new Promise<void>((resolve, reject) => {
+      audio.onended = () => resolve();
+      audio.onerror = () => reject(new Error("Unable to play the assistant response"));
+    });
+  } finally {
+    URL.revokeObjectURL(url);
+  }
 }
 
 // Map the voice pipeline phase onto the Persona animation state.
@@ -58,26 +104,70 @@ export function useVoiceLoop() {
   const [error, setError] = useState<string | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const monitorRef = useRef<number | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   const start = useCallback(async () => {
     setError(null);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream);
+      streamRef.current = stream;
+      const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+        ? "audio/webm;codecs=opus"
+        : MediaRecorder.isTypeSupported("audio/webm")
+          ? "audio/webm"
+          : undefined;
+      const recorder = mimeType
+        ? new MediaRecorder(stream, { mimeType })
+        : new MediaRecorder(stream);
       chunksRef.current = [];
+      const audioContext = new AudioContext();
+      const analyser = audioContext.createAnalyser();
+      analyser.fftSize = 1024;
+      audioContext.createMediaStreamSource(stream).connect(analyser);
+      const samples = new Uint8Array(analyser.fftSize);
+      let heardSpeech = false;
+      let silentSince: number | null = null;
+      const startedAt = performance.now();
+
+      const monitor = () => {
+        analyser.getByteTimeDomainData(samples);
+        const level = Math.sqrt(
+          samples.reduce((sum, sample) => sum + (sample - 128) ** 2, 0) / samples.length,
+        );
+        const now = performance.now();
+        if (level > 8) {
+          heardSpeech = true;
+          silentSince = null;
+        } else if (heardSpeech) {
+          silentSince ??= now;
+          if (now - silentSince >= 900 || now - startedAt >= 15000) {
+            if (recorder.state === "recording") recorder.stop();
+            return;
+          }
+        } else if (now - startedAt >= 15000) {
+          if (recorder.state === "recording") recorder.stop();
+          return;
+        }
+        monitorRef.current = requestAnimationFrame(monitor);
+      };
+
       recorder.ondataavailable = (e) => {
         if (e.data.size > 0) chunksRef.current.push(e.data);
       };
       recorder.onstop = async () => {
+        if (monitorRef.current !== null) cancelAnimationFrame(monitorRef.current);
+        await audioContext.close();
         stream.getTracks().forEach((t) => t.stop());
+        streamRef.current = null;
         const blob = new Blob(chunksRef.current, { type: recorder.mimeType });
         setStatus("transcribing");
         try {
-          const text = await transcribeBlob(blob, "utterance.webm");
-          setTranscript(text);
-          if (text.trim()) {
+          const result = await requestVoiceAgent(blob);
+          setTranscript(result.transcript);
+          if (result.transcript.trim()) {
             setStatus("speaking");
-            await speak(text);
+            await playAudio(result.reply);
           }
           setStatus("idle");
         } catch (err) {
@@ -88,15 +178,20 @@ export function useVoiceLoop() {
       recorder.start();
       recorderRef.current = recorder;
       setStatus("recording");
+      monitorRef.current = requestAnimationFrame(monitor);
     } catch (err) {
+      streamRef.current?.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
       setError(err instanceof Error ? err.message : "Microphone unavailable");
       setStatus("error");
     }
   }, []);
 
   const stop = useCallback(() => {
-    recorderRef.current?.stop();
+    if (monitorRef.current !== null) cancelAnimationFrame(monitorRef.current);
+    if (recorderRef.current?.state === "recording") recorderRef.current.stop();
     recorderRef.current = null;
+    streamRef.current?.getTracks().forEach((track) => track.stop());
   }, []);
 
   return { status, transcript, error, start, stop };
