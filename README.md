@@ -36,13 +36,15 @@ The voice UI uses one request per turn:
    silence (or 15 seconds).
 3. The browser decodes the recording and encodes it as PCM WAV, which is the format
    accepted by the Gnani STT API.
-4. `POST /api/voice/agent` performs STT, runs the SystemOne pipeline, and performs
+4. `POST /api/voice/agent/{session_id}` performs STT, runs the SystemOne pipeline, and performs
    TTS. It returns the reply as `audio/wav`; the transcript is provided in the
-   `X-Transcript` response header.
+   `X-Transcript` response header. The Vite frontend generates one UUID per voice
+   session and sends it as `session_id` so conversation history is preserved
+   across turns.
 5. The browser plays the returned WAV and returns to the idle state.
 
 `POST /api/voice/stt` and `POST /api/voice/tts` remain available for clients that
-need the individual stages. The Next.js rewrite in `frontend/next.config.ts`
-forwards `/api/*` requests to the FastAPI service.
+need the individual stages. The Vite development proxy in
+`frontend/vite.config.ts` forwards `/api/*` requests to the FastAPI service.
 
 Seeding only runs when the volume is empty. Remove the volume (`docker volume rm systemone-mongo-data`) to reseed; this discards all orders, tickets, and conversation history.

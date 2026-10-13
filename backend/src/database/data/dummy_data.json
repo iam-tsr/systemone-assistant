@@ -7,7 +7,7 @@
   },
   "orders": [
     {
-      "orderId": "ORD-2026-00001",
+      "orderId": "10001",
       "orderDate": { "$date": "2026-10-01T09:15:00Z" },
       "status": "delivered",
       "items": [
@@ -21,7 +21,7 @@
       "deliveryDate": { "$date": "2026-10-03T16:30:00Z" }
     },
     {
-      "orderId": "ORD-2026-00002",
+      "orderId": "10002",
       "orderDate": { "$date": "2026-10-05T14:42:00Z" },
       "status": "shipped",
       "items": [
@@ -33,7 +33,7 @@
       "expectedDeliveryDate": { "$date": "2026-10-12T18:00:00Z" }
     },
     {
-      "orderId": "ORD-2026-00003",
+      "orderId": "10003",
       "orderDate": { "$date": "2026-10-09T18:03:00Z" },
       "status": "processing",
       "items": [
