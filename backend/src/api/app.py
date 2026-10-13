@@ -13,7 +13,7 @@ from .routes import profile
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # tz_aware: datetimes come back with UTC tzinfo, so they serialize with +00:00.
     # Naive values would be read as local time by the browser.
     client = MongoClient(mongodb_settings.uri, tz_aware=True)
