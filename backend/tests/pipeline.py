@@ -1,4 +1,4 @@
-from backend.pipeline import handle_message
+from src.pipeline import handle_message
 
 if __name__ == "__main__":
 # Run until the user types "exit"

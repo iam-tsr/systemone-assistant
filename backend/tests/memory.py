@@ -1,4 +1,4 @@
-from backend.memory import chat, get_chat_history, clear_chat_history
+from src.memory import chat, get_chat_history, clear_chat_history
 
 if __name__ == "__main__":
     thread_id = 1

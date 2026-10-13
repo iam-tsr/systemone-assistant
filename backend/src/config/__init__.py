@@ -1,5 +1,12 @@
 from .llm import client
-from .settings import gnani_settings, mongodb_settings, openai_settings, systemone_settings
+from .settings import (
+    gnani_settings, 
+    mongodb_settings, 
+    openai_settings, 
+    systemone_settings, 
+    cors_settings, 
+    unicorn_settings
+)
 from .systemone import systemone_predict
 
 __all__ = [
@@ -14,4 +21,6 @@ __all__ = [
     "mongodb_settings",
     "openai_settings",
     "systemone_settings",
+    "cors_settings",
+    "unicorn_settings",
 ]

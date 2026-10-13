@@ -1,4 +1,4 @@
-from backend.config import client
+from src.config import client
 
 def test_llm_invoke():
     llm = client()

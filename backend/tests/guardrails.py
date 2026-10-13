@@ -1,4 +1,4 @@
-from backend.guardrails import guardrail
+from src.guardrails import guardrail
 
 def main() -> None:
     state1 = [{"HumanMessage": "Hi", "AI_MESSAGE": "Hello! How can I assist you today?", "AIMessage": "Hello! How can I assist you today?"},

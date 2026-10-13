@@ -27,6 +27,14 @@ class OpenAISettings(BaseSettings):
     def _strip_trailing_slash(cls, v: str) -> str:
         return v.rstrip("/")
 
+
+class UnicornSettings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", env_prefix="UNICORN_", extra="ignore")
+
+    host: str
+    port: int
+
+
 class MongoDBSettings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_prefix="MONGO_", extra="ignore")
 
@@ -40,7 +48,15 @@ class GnaniSettings(BaseSettings):
     api_key: str
 
 
+class AllowedOriginsSettings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", env_prefix="CORS_", extra="ignore")
+
+    allowed_origins: list[str]
+
+
 systemone_settings = SystemOneSettings()
 openai_settings = OpenAISettings()
 mongodb_settings = MongoDBSettings()
 gnani_settings = GnaniSettings()
+cors_settings = AllowedOriginsSettings()
+unicorn_settings = UnicornSettings()
