@@ -14,7 +14,7 @@ from .tools import (
 
 
 ROUTE_CONFIDENCE = 0.85
-ENTITY_PRECHECK_FLOOR = 0.7
+ENTITY_PRECHECK_FLOOR = 0.5
 
 
 def handle_message(thread_id: str, message: str) -> dict:

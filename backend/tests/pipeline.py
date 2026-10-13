@@ -6,5 +6,5 @@ if __name__ == "__main__":
         user_input = input("User: ")
         if user_input.lower() == "exit":
             break
-        response = handle_message(user_input)
+        response = handle_message("1234", user_input)
         print(f"Assistant: {response['reply']} (action: {response['action']})")
