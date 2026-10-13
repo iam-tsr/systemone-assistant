@@ -29,7 +29,7 @@ const states: { state: PersonaState; icon: LucideIcon; label: string }[] = [
 ];
 
 export function VoicePersona({ onTurn }: { onTurn?: (turn: VoiceTurn) => void }) {
-  const { status, transcript, error, start, stop } = useVoiceLoop(onTurn);
+  const { status, error, start, stop } = useVoiceLoop(onTurn);
   const personaState = personaStateFor(status);
   const recording = status === "recording";
 
@@ -48,9 +48,6 @@ export function VoicePersona({ onTurn }: { onTurn?: (turn: VoiceTurn) => void })
         {recording ? "Stop" : "Speak"}
       </Button>
 
-      {transcript && (
-        <p className="max-w-md text-center text-sm text-muted-foreground">{transcript}</p>
-      )}
       {error && <p className="text-sm text-destructive">{error}</p>}
 
       <ButtonGroup orientation="horizontal">
