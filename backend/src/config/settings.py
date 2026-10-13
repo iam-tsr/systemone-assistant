@@ -3,7 +3,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class SystemOneSettings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_prefix="JEV_", extra="ignore")
+    model_config = SettingsConfigDict(env_file=".env", env_prefix="LAYA_", extra="ignore")
 
     base_url: str
     api_key: str | None = None
