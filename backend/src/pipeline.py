@@ -1,5 +1,4 @@
 import asyncio
-from uuid import uuid4
 
 from .guardrails import guardrail
 from .memory import chat, get_chat_history
@@ -17,10 +16,8 @@ from .tools import (
 ROUTE_CONFIDENCE = 0.85
 ENTITY_PRECHECK_FLOOR = 0.7
 
-thread_id = str(uuid4())
 
-
-def handle_message(message: str) -> dict:
+def handle_message(thread_id: str, message: str) -> dict:
     guard = guardrail(message)
     if guard["risk_score"] == 1:
         # Blocked messages are not stored in memory.

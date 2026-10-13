@@ -66,10 +66,10 @@ def _synthesize_or_raise(text: str, voice: str) -> bytes:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
 
-def _handle_message_or_raise(transcript: str) -> dict:
+def _handle_message_or_raise(session_id: str, transcript: str) -> dict:
     """Run the pipeline. Dependency failures become 503 so the UI can say what is down."""
     try:
-        return handle_message(transcript)
+        return handle_message(session_id, transcript)
     except httpx.ConnectError as exc:
         logger.error("SystemOne model server unreachable: %s", exc)
         raise HTTPException(status_code=503, detail="SystemOne model server is not reachable") from exc
@@ -94,8 +94,8 @@ def text_to_speech(body: SpeakRequest) -> Response:
     return Response(content=audio, media_type="audio/wav")
 
 
-@router.post("/voice/agent", response_class=Response, responses={200: {"content": {"audio/wav": {}}}})
-def voice_agent(file: UploadFile = File(...)) -> Response:
+@router.post("/voice/agent/{session_id}", response_class=Response, responses={200: {"content": {"audio/wav": {}}}})
+def voice_agent(session_id: str, file: UploadFile = File(...)) -> Response:
     """One voice turn: user audio -> STT -> pipeline.handle_message -> TTS reply audio.
 
     Transcript, reply, and action come back in response headers, percent-encoded
@@ -106,7 +106,7 @@ def voice_agent(file: UploadFile = File(...)) -> Response:
     if not transcript.strip():
         raise HTTPException(status_code=422, detail="No speech detected")
 
-    result = _handle_message_or_raise(transcript)
+    result = _handle_message_or_raise(session_id, transcript)
     reply_audio = _synthesize_or_raise(result["reply"], DEFAULT_VOICE)
 
     return Response(

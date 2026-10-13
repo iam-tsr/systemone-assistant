@@ -60,10 +60,16 @@ async function toWav(blob: Blob): Promise<Blob> {
   }
 }
 
-async function requestVoiceAgent(blob: Blob): Promise<{ transcript: string; reply: string; audio: Blob }> {
+async function requestVoiceAgent(
+  blob: Blob,
+  sessionId: string,
+): Promise<{ transcript: string; reply: string; audio: Blob }> {
   const form = new FormData();
   form.append("file", await toWav(blob), "utterance.wav");
-  const res = await fetch("/api/voice/agent", { method: "POST", body: form });
+  const res = await fetch(`/api/voice/agent/${encodeURIComponent(sessionId)}`, {
+    method: "POST",
+    body: form,
+  });
   if (!res.ok) throw new Error(await readError(res));
   return {
     transcript: decodeURIComponent(res.headers.get("X-Transcript") ?? ""),
@@ -104,6 +110,7 @@ export function useVoiceLoop(onTurn?: (turn: VoiceTurn) => void) {
   const [status, setStatus] = useState<VoiceStatus>("idle");
   const [transcript, setTranscript] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
+  const sessionIdRef = useRef<string | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const monitorRef = useRef<number | null>(null);
@@ -165,7 +172,8 @@ export function useVoiceLoop(onTurn?: (turn: VoiceTurn) => void) {
         const blob = new Blob(chunksRef.current, { type: recorder.mimeType });
         setStatus("transcribing");
         try {
-          const result = await requestVoiceAgent(blob);
+          sessionIdRef.current ??= crypto.randomUUID();
+          const result = await requestVoiceAgent(blob, sessionIdRef.current);
           setTranscript(result.transcript);
           onTurn?.({ transcript: result.transcript, reply: result.reply });
           if (result.transcript.trim()) {
