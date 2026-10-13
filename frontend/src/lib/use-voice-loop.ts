@@ -5,6 +5,7 @@ import { useCallback, useRef, useState } from "react";
 import type { PersonaState } from "@/components/ai-elements/persona";
 
 export type VoiceStatus = "idle" | "recording" | "transcribing" | "speaking" | "error";
+export type VoiceTurn = { transcript: string; reply: string };
 
 async function readError(res: Response): Promise<string> {
   const body = await res.json().catch(() => null);
@@ -59,14 +60,15 @@ async function toWav(blob: Blob): Promise<Blob> {
   }
 }
 
-async function requestVoiceAgent(blob: Blob): Promise<{ transcript: string; reply: Blob }> {
+async function requestVoiceAgent(blob: Blob): Promise<{ transcript: string; reply: string; audio: Blob }> {
   const form = new FormData();
   form.append("file", await toWav(blob), "utterance.wav");
   const res = await fetch("/api/voice/agent", { method: "POST", body: form });
   if (!res.ok) throw new Error(await readError(res));
   return {
     transcript: decodeURIComponent(res.headers.get("X-Transcript") ?? ""),
-    reply: await res.blob(),
+    reply: decodeURIComponent(res.headers.get("X-Reply") ?? ""),
+    audio: await res.blob(),
   };
 }
 
@@ -98,7 +100,7 @@ export function personaStateFor(status: VoiceStatus): PersonaState {
   }
 }
 
-export function useVoiceLoop() {
+export function useVoiceLoop(onTurn?: (turn: VoiceTurn) => void) {
   const [status, setStatus] = useState<VoiceStatus>("idle");
   const [transcript, setTranscript] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
@@ -165,9 +167,10 @@ export function useVoiceLoop() {
         try {
           const result = await requestVoiceAgent(blob);
           setTranscript(result.transcript);
+          onTurn?.({ transcript: result.transcript, reply: result.reply });
           if (result.transcript.trim()) {
             setStatus("speaking");
-            await playAudio(result.reply);
+            await playAudio(result.audio);
           }
           setStatus("idle");
         } catch (err) {

@@ -18,7 +18,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { personaStateFor, useVoiceLoop } from "@/lib/use-voice-loop";
+import { personaStateFor, type VoiceTurn, useVoiceLoop } from "@/lib/use-voice-loop";
 
 const states: { state: PersonaState; icon: LucideIcon; label: string }[] = [
   { icon: CircleIcon, label: "Idle", state: "idle" },
@@ -28,8 +28,8 @@ const states: { state: PersonaState; icon: LucideIcon; label: string }[] = [
   { icon: EyeClosedIcon, label: "Asleep", state: "asleep" },
 ];
 
-export function VoicePersona() {
-  const { status, transcript, error, start, stop } = useVoiceLoop();
+export function VoicePersona({ onTurn }: { onTurn?: (turn: VoiceTurn) => void }) {
+  const { status, transcript, error, start, stop } = useVoiceLoop(onTurn);
   const personaState = personaStateFor(status);
   const recording = status === "recording";
 
