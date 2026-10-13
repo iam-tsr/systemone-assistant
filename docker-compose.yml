@@ -16,55 +16,55 @@ services:
     volumes:
       - systemone-data:/data/db
     restart: unless-stopped
-    networks:
-      - db-network
+    # networks:
+    #   - db-network
 
-  backend:
-    build:
-      context: ./backend
-    container_name: systemone-backend
-    depends_on:
-      mongodb:
-        condition: service_healthy
-    env_file:
-      - ./backend/.env
-    environment:
-      MONGO_URI: mongodb://${SERVER_MONGO_USER}:${SERVER_MONGO_PASSWORD}@mongodb:27017/?authSource=admin
-      MONGO_DATABASE: ${SERVER_MONGO_DATABASE}      
-    extra_hosts:
-      - "host.docker.internal:host-gateway"      
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8001/api/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 12
-    ports:
-      - "8001:8001"
-    restart: unless-stopped
-    networks:
-      - web-network
-      - db-network
+#   backend:
+#     build:
+#       context: ./backend
+#     container_name: systemone-backend
+#     depends_on:
+#       mongodb:
+#         condition: service_healthy
+#     env_file:
+#       - ./backend/.env
+#     environment:
+#       MONGO_URI: mongodb://${SERVER_MONGO_USER}:${SERVER_MONGO_PASSWORD}@mongodb:27017/?authSource=admin
+#       MONGO_DATABASE: ${SERVER_MONGO_DATABASE}      
+#     extra_hosts:
+#       - "host.docker.internal:host-gateway"      
+#     healthcheck:
+#       test: ["CMD", "curl", "-f", "http://localhost:8001/api/health"]
+#       interval: 10s
+#       timeout: 5s
+#       retries: 12
+#     ports:
+#       - "8001:8001"
+#     restart: unless-stopped
+#     networks:
+#       - web-network
+#       - db-network
 
-  frontend:
-    build:
-      context: ./frontend
-    container_name: systemone-frontend
-    depends_on:
-      - backend
-    env_file:
-      - ./frontend/.env
-    ports:
-      - "3000:3000"
-    restart: unless-stopped
-    networks:
-      - web-network
+#   frontend:
+#     build:
+#       context: ./frontend
+#     container_name: systemone-frontend
+#     depends_on:
+#       - backend
+#     env_file:
+#       - ./frontend/.env
+#     ports:
+#       - "3000:3000"
+#     restart: unless-stopped
+#     networks:
+#       - web-network
 
 volumes:
   systemone-data:
     driver: local
 
-networks:
-  web-network:
-    driver: bridge
-  db-network:
-    driver: bridge
+# networks:
+#   web-network:
+#     driver: bridge
+#   db-network:
+#     driver: bridge
