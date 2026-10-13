@@ -10,5 +10,5 @@ if __name__ == "__main__":
         "main:app",
         host=unicorn_settings.host,
         port=unicorn_settings.port,
-        reload=True
+        reload=False
     )

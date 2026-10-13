@@ -88,3 +88,9 @@ def voice_agent(session_id: str, file: UploadFile = File(...)) -> Response:
             "X-Action": quote(result["action"]),
         },
     )
+
+
+@router.get("/health")
+def health_check() -> dict:
+    """Health check endpoint for the voice API."""
+    return {"status": "ok"}
