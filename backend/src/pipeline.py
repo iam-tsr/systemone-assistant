@@ -32,7 +32,7 @@ def handle_message(thread_id: str, message: str) -> dict:
         return {"reply": reply, "action": action}
 
     conversation = get_chat_history(thread_id)
-
+    conversation.append({"HumanMessage": message})
     action = _route(str(conversation))
     tool_result = _run_operation(action, message, conversation)
 
@@ -45,9 +45,11 @@ def handle_message(thread_id: str, message: str) -> dict:
 
 def _route(conversation: str) -> str:
     """Pick an action: systemone_route if confident, otherwise slm_route with escalation exposed."""
-    decision = systemone_route(conversation)
-    if decision["action_confidence"] >= ROUTE_CONFIDENCE:
-        return decision["action"]
+
+    # Best for routing but its context window is too small for the full conversation.
+    # decision = systemone_route(conversation)
+    # if decision["action_confidence"] >= ROUTE_CONFIDENCE:
+    #     return decision["action"]
 
     fallback = slm_route(conversation)
     return fallback["action"]
@@ -63,7 +65,7 @@ def _run_operation(action: str, message: str, conversation: list[dict]) -> str |
 
     # Order actions: recon -> extract -> validate -> execute.
     entities = _extract_query_entities(conversation)
-    print(f"Extracted entities: {entities}")
+
     order_id = entities.get("order_id") if entities else None
     if not order_id:
         return "Missing required information: order_id."
