@@ -7,7 +7,7 @@ and returns synthesized WAV audio for browser playback.
 
 ## Architecture
 
-
+![alt text](assets/system-architecture-diagram.png)
 
 ## Project structure
 

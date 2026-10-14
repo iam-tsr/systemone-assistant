@@ -46,10 +46,10 @@ def handle_message(thread_id: str, message: str) -> dict:
 def _route(conversation: str) -> str:
     """Pick an action: systemone_route if confident, otherwise slm_route with escalation exposed."""
 
-    # Best for routing but its context window is too small for the full conversation.
-    # decision = systemone_route(conversation)
-    # if decision["action_confidence"] >= ROUTE_CONFIDENCE:
-    #     return decision["action"]
+    # Best cost effective approach for routing but make sure your decision model's context window is large enough to handle the full conversation.
+    decision = systemone_route(conversation)
+    if decision["action_confidence"] >= ROUTE_CONFIDENCE:
+        return decision["action"]
 
     fallback = slm_route(conversation)
     return fallback["action"]
