@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pymongo import MongoClient
 
 from ..config import mongodb_settings, cors_settings
+from ..database import OrderMongoDBHandler, UserMongoDBHandler
 from .routes import voice
 from .routes import orders
 from .routes import profile
@@ -20,9 +21,19 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     client.admin.command("ping")
     app.state.mongo = client
     app.state.db = client[mongodb_settings.database]
+
+    order_handler = OrderMongoDBHandler()
+    user_handler = UserMongoDBHandler()
+    app.state.order_handler = order_handler
+    app.state.user_handler = user_handler
+
     try:
+        order_handler.load_orders()
+        user_handler.load_users()
         yield
     finally:
+        order_handler.close_connection()
+        user_handler.close_connection()
         client.close()
 
 
