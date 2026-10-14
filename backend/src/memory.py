@@ -3,7 +3,7 @@ from langgraph.graph import START, MessagesState, StateGraph
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from .config import client, mongodb_settings
-from .prompt import GEN_SYSTEM_PROMPT
+from .prompt import build_system_prompt
 
 
 model = client()
@@ -13,7 +13,7 @@ DATABASE_NAME = mongodb_settings.database
 
 def call_model(state: MessagesState) -> dict:
     messages = [
-        SystemMessage(content=GEN_SYSTEM_PROMPT),
+        SystemMessage(content=build_system_prompt()),
         *state["messages"],
     ]
     response = model.invoke(messages)

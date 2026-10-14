@@ -2,10 +2,9 @@ from datetime import datetime
 from typing import Any
 
 from bson import ObjectId
-from pymongo.database import Database
 
-USERS = "user_data"
-ORDERS = "order_data"
+from .users import  UserMongoDBHandler
+from .orders import OrderMongoDBHandler
 
 # Excluded from API responses. Mongo's _id is not part of the public contract.
 _HIDE_ID = {"_id": 0}
@@ -29,11 +28,8 @@ def _order_out(doc: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-class UserRepository:
+class UserRepository(UserMongoDBHandler):
     """Read access to user_data. Takes an injected Database so the API shares one client."""
-
-    def __init__(self, db: Database):
-        self._users = db[USERS]
 
     def current_user(self) -> dict[str, Any] | None:
         """Return the profile of the current user.
@@ -41,7 +37,7 @@ class UserRepository:
         No auth exists yet, so this is the first user document. Replace with a
         session lookup once login is added.
         """
-        doc = self._users.find_one({}, _HIDE_ID, sort=[("_id", 1)])
+        doc = self.collection.find_one({}, _HIDE_ID, sort=[("_id", 1)])
         if doc is None:
             return None
         return {
@@ -52,20 +48,17 @@ class UserRepository:
         }
 
 
-class OrderRepository:
+class OrderRepository(OrderMongoDBHandler):
     """Read access to order_data, scoped to a user."""
 
-    def __init__(self, db: Database):
-        self._orders = db[ORDERS]
-
     def list_for_user(self, user_id: str) -> list[dict[str, Any]]:
-        cursor = self._orders.find(
+        cursor = self.collection.find(
             {"userId": ObjectId(user_id)}, _HIDE_ID
         ).sort("orderDate", -1)
         return [_order_out(doc) for doc in cursor]
 
     def get_for_user(self, user_id: str, order_id: str) -> dict[str, Any] | None:
-        doc = self._orders.find_one(
+        doc = self.collection.find_one(
             {"userId": ObjectId(user_id), "orderId": order_id}, _HIDE_ID
         )
         return _order_out(doc) if doc is not None else None
