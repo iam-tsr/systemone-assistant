@@ -55,6 +55,12 @@ environment substitution. Start the full stack from the repository root:
 docker compose --build
 ```
 
+Run detached:
+
+```bash
+docker compose --build -d
+```
+
 ## API overview
 
 All application routes are prefixed with `/api`.
