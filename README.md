@@ -7,22 +7,7 @@ and returns synthesized WAV audio for browser playback.
 
 ## Architecture
 
-```text
-Browser
-  │
-  │  POST /api/voice/agent/{session_id}
-  ▼
-Vite frontend
-  │
-  │  Docker network proxy
-  ▼
-FastAPI backend
-  ├── Gnani STT/TTS
-  ├── SystemOne/Laya routing
-  ├── OpenAI-compatible response model
-  ├── MongoDB order data
-  └── MongoDB LangGraph checkpoints
-```
+
 
 ## Project structure
 
@@ -47,16 +32,10 @@ docker-compose.yml        MongoDB, backend, and frontend services
 
 ## Requirements
 
-For local development:
-
-- Python 3.12 or newer
-- Node.js 22 or newer
-- MongoDB 7 or Docker
 - A running SystemOne/JEV model server
 - An OpenAI-compatible model server
 - Gnani API credentials
-
-Docker users need Docker Engine and Docker Compose.
+- Docker Engine and Docker Compose.
 
 ## Configuration
 
@@ -73,38 +52,8 @@ Compose uses values from `backend/.env` for MongoDB initialization and
 environment substitution. Start the full stack from the repository root:
 
 ```bash
-docker compose --env-file ./backend/.env up --build
+docker compose --build
 ```
-
-Run detached:
-
-```bash
-docker compose --env-file ./backend/.env up --build -d
-```
-
-## Run locally without Docker
-
-### Backend
-
-From `backend/`, install dependencies with `uv`:
-
-```bash
-uv sync
-python -m main
-```
-
-The backend expects MongoDB and the configured model services to be running.
-
-### Frontend
-
-From `frontend/`:
-
-```bash
-npm ci
-npm run dev
-```
-
-Open http://localhost:3000. Vite proxies `/api/*` to `API_ORIGIN`.
 
 ## API overview
 
