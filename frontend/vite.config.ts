@@ -5,7 +5,7 @@ import path from "node:path";
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
-  const apiOrigin = env.API_ORIGIN ?? "http://127.0.0.1:8001";
+  const apiOrigin = env.VITE_API_URL ?? "http://127.0.0.1:8001";
   const host = env.FRONTEND_HOST ?? "localhost";
   const port = Number(env.FRONTEND_PORT ?? 3000);
 

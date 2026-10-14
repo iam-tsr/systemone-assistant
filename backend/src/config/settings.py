@@ -2,6 +2,11 @@ from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+def _normalize_base_url(value: str) -> str:
+    cleaned = value.strip().rstrip(",").strip()
+    return cleaned.rstrip("/")
+
+
 class SystemOneSettings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_prefix="LAYA_", extra="ignore")
 
@@ -9,10 +14,10 @@ class SystemOneSettings(BaseSettings):
     api_key: str | None = None
     model: str | None = None
 
-    @field_validator("base_url")
+    @field_validator("base_url", mode="before")
     @classmethod
-    def _strip_trailing_slash(cls, v: str) -> str:
-        return v.rstrip("/")
+    def _normalize_base_url(cls, v: str) -> str:
+        return _normalize_base_url(v)
 
 
 class OpenAISettings(BaseSettings):
@@ -22,10 +27,10 @@ class OpenAISettings(BaseSettings):
     api_key: str
     model: str
 
-    @field_validator("base_url")
+    @field_validator("base_url", mode="before")
     @classmethod
-    def _strip_trailing_slash(cls, v: str) -> str:
-        return v.rstrip("/")
+    def _normalize_base_url(cls, v: str) -> str:
+        return _normalize_base_url(v)
 
 
 class UnicornSettings(BaseSettings):
