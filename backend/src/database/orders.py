@@ -55,13 +55,17 @@ class OrderMongoDBHandler:
         Returns None when no order has the given orderId.
         """
         try:
-            order = self.collection.find_one(
-                {"orderId": order_id},
-                {"_id": 0, "status": 1, "items": 1, "deliveryDate": 1},
-            )
-            if order is None:
+            check_order_status = self.collection.find_one({"orderId": order_id},{"status": 1})
+            if check_order_status["status"] == "cancelled":
+                return self.collection.find_one({"orderId": order_id},{"status": 1, "items": 1, "totalAmount": 1})
+            elif check_order_status["status"] == "delivered":
+                return self.collection.find_one({"orderId": order_id},{"status": 1, "items": 1, "totalAmount": 1, "deliveryDate": 1})
+            elif check_order_status["status"] == "processing":
+                return self.collection.find_one({"orderId": order_id},{"status": 1, "items": 1, "totalAmount": 1, "expectedDeliveryDate": 1})
+            elif check_order_status["status"] == "shipped":
+                return self.collection.find_one({"orderId": order_id},{"status": 1, "items": 1, "totalAmount": 1, "expectedDeliveryDate": 1, "shippingDate": 1})
+            else:
                 return None
-            return order
         except Exception as e:
             print(f"Error fetching order status: {e}")
             return None

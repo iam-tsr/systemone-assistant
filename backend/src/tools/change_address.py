@@ -18,13 +18,14 @@ async def change_address(orderid: str, new_address: str) -> str:
     order_handler = None
     try:
         order_handler = OrderMongoDBHandler()
-        result = order_handler.update_address(orderid, new_address)
-        if result:
-            return f"Address for order {orderid} has been updated to: {new_address}"
 
         current = order_handler.order_status(orderid)
         if current is None:
             return f"Order {orderid} could not be found."
+        elif current['status'] == 'processing':
+            result = order_handler.update_address(orderid, new_address)
+            if result:
+                return f"Address for order {orderid} has been updated to: {new_address}"
         return (
             f"Order {orderid}'s address cannot be changed because its status is "
             f"'{current['status']}'. Addresses can only be changed while the order is processing."

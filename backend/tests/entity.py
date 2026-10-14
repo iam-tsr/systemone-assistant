@@ -1,6 +1,6 @@
 from src.entity_recognition import extract_entity, fast_entity_recon
 
-query = [{'HumanMessage': 'I want to know about my order one triple zero one.'}]
+query = [{'HumanMessage': 'I want to change the shipping address for my order one zero zero zero one to one Test St, Mumbai, Maharashtra one four times zero two.'}]
 
 output = fast_entity_recon(query)
 print(output) # 85% confidence need to verify the output.

@@ -44,7 +44,8 @@ def extract_entity(conversation: list[dict]) -> EntityRecognition:
         3. If an address is associated with an order, include it in new_address for that order.
         4. If no address is associated with an order, set new_address to null.
         5. Do not assign an address to an order unless the conversation clearly links them.
-        6. If the order ID is mentioned in words (e.g., "one zero zero zero one"), convert it to digits (e.g., "10001").
+        6. STRONGLY prefer to use the order ID in its numeric form (e.g., "10001") rather than in words (e.g., "one zero zero zero one").
+        7. Convert any address mentioned in words into its standard numeric form (e.g., "one three times zero three" becomes "140003").
 
         Conversation:
         {transcript}

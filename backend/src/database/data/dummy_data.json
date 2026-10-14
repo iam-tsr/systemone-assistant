@@ -18,6 +18,7 @@
       "paymentMethod": "upi",
       "totalAmount": 3497.0,
       "expectedDeliveryDate": { "$date": "2026-10-05T12:00:00Z" },
+      "shippingDate": { "$date": "2026-10-02T10:00:00Z" },
       "deliveryDate": { "$date": "2026-10-03T16:30:00Z" }
     },
     {
@@ -30,7 +31,8 @@
       "shippingAddress": "12 MG Road, Indiranagar, Bengaluru, Karnataka 560038",
       "paymentMethod": "credit_card",
       "totalAmount": 7999.0,
-      "expectedDeliveryDate": { "$date": "2026-10-12T18:00:00Z" }
+      "expectedDeliveryDate": { "$date": "2026-10-12T18:00:00Z" },
+      "shippingDate": { "$date": "2026-10-07T11:00:00Z" }
     },
     {
       "orderId": "10003",
