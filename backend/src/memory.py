@@ -12,8 +12,11 @@ MONGODB_ATLAS_URI = mongodb_settings.uri
 DATABASE_NAME = mongodb_settings.database
 
 def call_model(state: MessagesState) -> dict:
-    """Graph node: send the conversation so far to the model and append its reply."""
-    response = model.invoke(state["messages"])
+    messages = [
+        SystemMessage(content=GEN_SYSTEM_PROMPT),
+        *state["messages"],
+    ]
+    response = model.invoke(messages)
     return {"messages": response}
 
 
@@ -28,8 +31,10 @@ def _thread_config(thread_id: int) -> dict:
 
 def chat(thread_id: int, message: str) -> str:
     """Send a user message on the given thread and return the model's reply text."""
+    if not message or not message.strip():
+        raise ValueError("chat message must be non-empty")
+    
     messages = [
-        SystemMessage(content=GEN_SYSTEM_PROMPT),
         HumanMessage(content=message),
     ]
 
