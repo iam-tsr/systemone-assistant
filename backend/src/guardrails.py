@@ -19,8 +19,6 @@ def guardrail(state: str):
 
     churn_risk = result["answers"]["churn_risk"]["noul"]
 
-    # print(f"Guardrail check: risk_score={risk_score}, jail_break={jail_break}, malicious_code={malicious_code}, churn_risk={churn_risk}")
-
     return {
         "risk_score": risk_score,
         "churn_risk": churn_risk,

@@ -13,7 +13,7 @@ from .tools import (
 
 
 
-ROUTE_CONFIDENCE = 0.85
+ROUTE_CONFIDENCE = 0.80
 ENTITY_PRECHECK_FLOOR = 0.5
 
 

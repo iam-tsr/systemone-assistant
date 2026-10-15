@@ -1,11 +1,6 @@
 from typing import Optional, List
 from pydantic import BaseModel, Field
-
-from langchain.agents import create_agent
-from langchain.agents.structured_output import ToolStrategy
-
 from .config import client, systemone_predict
-
 
 class OrderEntity(BaseModel):
     order_id: Optional[int] = Field(
@@ -21,71 +16,47 @@ class OrderEntity(BaseModel):
         description="The postal/zip code associated with the address"
     )
 
-
 class EntityRecognition(BaseModel):
     orders: List[OrderEntity] = Field(
         default_factory=list,
         description="All orders mentioned in the conversation, with associated address information if available."
     )
 
-agent = create_agent(
-    model=client(),
-    response_format=ToolStrategy(
-        schema=EntityRecognition,
-        tool_message_content="Extract all order entities from the conversation."
-    )
-)
 
-def extract_entity(conversation: list[dict]) -> EntityRecognition:
+model = client().with_structured_output(EntityRecognition)
+
+def extract_entity(conversation: list[dict]) -> Optional[dict]:
     transcript = _conversation_to_text(conversation)
-
     prompt = f"""
         ### INSTRUCTIONS:
         Extract all order entities from the conversation.
         - If an order ID is mentioned, extract it as an integer. (e.g., "one triple zero one" -> 10001)
         - If a new address is mentioned, extract it as a string. (e.g., "one Test St, Mumbai, Maharashtra" -> "1 Test St, Mumbai, Maharashtra")
         - If a postal code is mentioned, extract it as an integer. (e.g., "double one double zero two" -> 11002)
-
         ### TRANSCRIPT:
         {transcript}
     """.strip()
-
-    response = agent.invoke(
-        {
-            "messages": [
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ]
-        }
-    )
-
-    output = EntityRecognition.model_validate(response["structured_response"])
-    return _clean_order_entities(output.orders)
+    
+    response = model.invoke(prompt)
+    return _clean_order_entities(response.orders)
 
 def _conversation_to_text(conversation: list[dict]) -> str:
     """Convert your custom conversation format into a plain text transcript."""
     lines = []
-
     for turn in conversation:
         if not isinstance(turn, dict):
             continue
-
         human_message = turn.get("HumanMessage")
         ai_message = turn.get("AIMessage")
-
         if human_message:
             lines.append(f"HumanMessage: {human_message}")
-
         if ai_message:
             lines.append(f"AIMessage: {ai_message}")
-
     return "\n".join(lines)
 
-def _clean_order_entities(orders: List[OrderEntity]) -> Optional[OrderEntity]:
+def _clean_order_entities(orders: List[OrderEntity]) -> Optional[dict]:
     """
-    Clean extracted order entities.
+    Clean extracted order entities and return them as a dictionary.
     """
     if not orders:
         return None
@@ -120,9 +91,11 @@ def _clean_order_entities(orders: List[OrderEntity]) -> Optional[OrderEntity]:
     if cleaned_postal_code is not None:
         address_parts.append(str(cleaned_postal_code))
 
+    # FIX 3: Explicitly return a dictionary (matching your request and fixing the previous type hint mismatch)
     return {
         "order_id": cleaned_order_id,
-        "new_address": " ".join(address_parts),
+        "new_address": " ".join(address_parts).strip() or None,
+        # "postal_code": cleaned_postal_code
     }
 
 # ------------------------------------------------------------------------
