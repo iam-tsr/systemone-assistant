@@ -1,5 +1,7 @@
-from typing import Any
-from .config import systemone_predict
+from typing import Any, Literal
+from pydantic import BaseModel, Field
+
+from .config import systemone_predict, client
 
 
 ACTIONS = {
@@ -28,33 +30,22 @@ def systemone_route(conversation: str) -> dict[str, Any]:
 
 # -------------------------------------------------------------------------------------
 
-from pydantic import BaseModel, Field
-
-from langchain.agents import create_agent
-from langchain.agents.structured_output import ToolStrategy
-
-from .config import client
+ActionType = Literal["order_status", "cancel_order", "change_address", "greeting", "other"]
 
 class RouteDecision(BaseModel):
     """A fallback routing method to route the user's inquiry to the most relevant tool."""
-    # keys = ['order_status', 'cancel_order', 'change_address', 'greeting', 'escalate_to_human']
-    action: str = Field(
-        description=f"Must be exactly one of: {ACTIONS.keys()}"
+    action: ActionType = Field(
+        description=f"Classify the user input into exactly one of these actions"
     )
     action_confidence: float = Field(
-        description="A confidence score between 0 and 1 indicating how confident the model is in its action choice."
+        description="A confidence score between 0.0 and 1.0 indicating how confident the model is in its action choice."
     )
+
+route_model = client().with_structured_output(RouteDecision)
 
 def slm_route(conversation: str) -> dict[str, Any]:
     """Route the user's inquiry to the most relevant tool using a language model."""
 
-    agent = create_agent(
-        model=client(),
-        response_format=ToolStrategy(
-            schema=RouteDecision,
-            tool_message_content="You are a intent routing engine. Classify the user input strictly into one of the allowed destinations.",
-        )
-    )        
-
-    result = agent.invoke({"messages": [{"role": "user", "content": conversation}]})
-    return dict(result['structured_response'])
+    result = route_model.invoke(conversation)
+    
+    return result.model_dump()
