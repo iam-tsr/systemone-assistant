@@ -29,10 +29,10 @@ from src.tools.change_address import change_address  # noqa: E402
 from src.tools.escalate_to_human import escalate_to_human  # noqa: E402
 from src.tools.order_status import order_status  # noqa: E402
 
-ORD1 = "10001"  # delivered
-ORD2 = "10002"  # shipped
-ORD3 = "10003"  # processing
-MISSING = "99999"
+ORD1 = 10001  # delivered
+ORD2 = 10002  # shipped
+ORD3 = 10003  # processing
+MISSING = 99999
 ESC_MSG = "The issue has been escalated to a human"
 
 _db = MongoClient(mongodb_settings.uri)[mongodb_settings.database]["order_data"]

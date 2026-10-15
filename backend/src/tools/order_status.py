@@ -5,11 +5,11 @@ from langchain.tools import tool
 from ..database import OrderMongoDBHandler
 
 @tool
-async def order_status(orderid: str) -> str:
+async def order_status(orderid: int) -> str:
     """Check the status of an order and return the status information.
     
     Args:
-        orderid (str): The ID of the order to check the status for.
+        orderid (int): The ID of the order to check the status for.
         
     Returns:
         str: A message indicating the status of the order.

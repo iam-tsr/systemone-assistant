@@ -49,7 +49,7 @@ class OrderMongoDBHandler:
             print(f"Error loading orders: {e}")
             return 0
 
-    def order_status(self, order_id: str) -> dict | None:
+    def order_status(self, order_id: int) -> dict | None:
         """Return the status, items, and delivery date (if set) of an order.
 
         Returns None when no order has the given orderId.
@@ -70,7 +70,7 @@ class OrderMongoDBHandler:
             print(f"Error fetching order status: {e}")
             return None
 
-    def update_address(self, order_id: str, shipping_address: str) -> bool:
+    def update_address(self, order_id: int, shipping_address: str) -> bool:
         """Replace the shipping address of an order.
 
         Only orders still in 'processing' can have their address changed. Orders in any
@@ -90,7 +90,7 @@ class OrderMongoDBHandler:
 
     CANCELLABLE_STATUSES = ("processing", "shipped")
 
-    def cancel_order(self, order_id: str) -> bool:
+    def cancel_order(self, order_id: int) -> bool:
         """Mark an order as cancelled and remove its expected and delivery dates.
 
         Only orders still in a cancellable status are updated. Delivered or already

@@ -57,7 +57,7 @@ class OrderRepository(OrderMongoDBHandler):
         ).sort("orderDate", -1)
         return [_order_out(doc) for doc in cursor]
 
-    def get_for_user(self, user_id: str, order_id: str) -> dict[str, Any] | None:
+    def get_for_user(self, user_id: str, order_id: int) -> dict[str, Any] | None:
         doc = self.collection.find_one(
             {"userId": ObjectId(user_id), "orderId": order_id}, _HIDE_ID
         )

@@ -20,7 +20,7 @@ def list_orders() -> OrdersResponse:
 
 
 @router.get("/orders/{order_id}", response_model=OrderResponse)
-def get_order(order_id: str) -> OrderResponse:
+def get_order(order_id: int) -> OrderResponse:
     user_id = _current_user_id()
     order = OrderRepository().get_for_user(user_id, order_id)
     if order is None:

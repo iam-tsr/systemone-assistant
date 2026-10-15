@@ -13,7 +13,7 @@ export type OrderItem = {
 };
 
 export type Order = {
-  orderId: string;
+  orderId: number;
   orderDate: string | null;
   status: string;
   items: OrderItem[];

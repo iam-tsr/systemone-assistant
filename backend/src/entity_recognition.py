@@ -8,7 +8,7 @@ from .config import client, systemone_predict
 
 
 class OrderEntity(BaseModel):
-    order_id: Optional[str] = Field(
+    order_id: Optional[int] = Field(
         default=None,
         description="The order ID mentioned in the conversation."
     )
@@ -36,18 +36,19 @@ def extract_entity(conversation: list[dict]) -> EntityRecognition:
     transcript = _conversation_to_text(conversation)
 
     prompt = f"""
-        Extract every order mentioned in the conversation.
+        You are an expert data extraction AI. Your task is to extract order IDs and their associated new addresses from a customer service transcript.
 
-        Rules:
-        1. Read the entire conversation.
-        2. Create one object for each distinct order_id.
-        3. If an address is associated with an order, include it in new_address for that order.
-        4. If no address is associated with an order, set new_address to null.
-        5. Do not assign an address to an order unless the conversation clearly links them.
-        6. STRONGLY prefer to use the order ID in its numeric form (e.g., "10001") rather than in words (e.g., "one zero zero zero one").
-        7. Convert any address mentioned in words into its standard numeric form (e.g., "one three times zero three" becomes "140003").
+        ### EXTRACTION RULES:
+        1. **Identify Orders:** Extract every distinct order mentioned. Group all information under a single object per unique `order_id`.
+        2. **Address Linking:** 
+        - Only extract a `new_address` if the transcript *explicitly* links that specific address to that specific `order_id`.
+        - If an address is mentioned but not linked to an order, ignore it.
+        - If an order is mentioned but no new address is provided for it, set `new_address` to `null`.
+        3. **Data Normalization (Crucial for Transcripts):**
+        - **Order IDs:** Convert spelled-out or phonetic numbers into standard digits (e.g., "one zero zero zero one" -> 10001). If the ID contains letters, format them as uppercase without spaces (e.g., "order a b c one two three" -> "ABC123").
+        - **Addresses/Zip Codes:** Convert spelled-out postal/zip codes into standard numeric format (e.g., "double one double zero five eight" -> "110058").
 
-        Conversation:
+        ### TRANSCRIPT:
         {transcript}
     """.strip()
 

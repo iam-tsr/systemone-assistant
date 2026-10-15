@@ -7,7 +7,7 @@
   },
   "orders": [
     {
-      "orderId": "10001",
+      "orderId": 10001,
       "orderDate": { "$date": "2026-10-01T09:15:00Z" },
       "status": "delivered",
       "items": [
@@ -22,7 +22,7 @@
       "deliveryDate": { "$date": "2026-10-03T16:30:00Z" }
     },
     {
-      "orderId": "10002",
+      "orderId": 10002,
       "orderDate": { "$date": "2026-10-05T14:42:00Z" },
       "status": "shipped",
       "items": [
@@ -35,7 +35,7 @@
       "shippingDate": { "$date": "2026-10-07T11:00:00Z" }
     },
     {
-      "orderId": "10003",
+      "orderId": 10003,
       "orderDate": { "$date": "2026-10-09T18:03:00Z" },
       "status": "processing",
       "items": [

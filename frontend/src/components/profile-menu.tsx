@@ -79,7 +79,7 @@ function useLoad<T>(view: View, url: string | null, key: string) {
 
 export function ProfileMenu() {
   const [view, setView] = useState<View>(null);
-  const [orderId, setOrderId] = useState<string | null>(null);
+  const [orderId, setOrderId] = useState<number | null>(null);
 
   const profile = useLoad<Profile>(
     view === "profile" ? view : null,
@@ -93,7 +93,9 @@ export function ProfileMenu() {
   );
   const order = useLoad<Order>(
     view === "order" ? view : null,
-    view === "order" && orderId ? `/api/orders/${encodeURIComponent(orderId)}` : null,
+    view === "order" && orderId !== null
+      ? `/api/orders/${encodeURIComponent(String(orderId))}`
+      : null,
     "order",
   );
 

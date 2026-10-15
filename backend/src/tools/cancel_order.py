@@ -4,11 +4,11 @@ from langchain.tools import tool
 from ..database import OrderMongoDBHandler
 
 @tool
-async def cancel_order(orderid: str) -> str:
+async def cancel_order(orderid: int) -> str:
     """Cancel an order and return a confirmation message.
     
     Args:
-        orderid (str): The ID of the order to cancel.
+        orderid (int): The ID of the order to cancel.
 
     Returns:
         str: A confirmation message.

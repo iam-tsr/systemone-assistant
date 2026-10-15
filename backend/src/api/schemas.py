@@ -15,7 +15,7 @@ class ProfileResponse(BaseModel):
 
 
 class Order(BaseModel):
-    orderId: str
+    orderId: int
     orderDate: str | None
     status: str
     items: list[dict[str, Any]]

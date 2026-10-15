@@ -4,11 +4,11 @@ from langchain.tools import tool
 from ..database import OrderMongoDBHandler
 
 @tool
-async def change_address(orderid: str, new_address: str) -> str:
+async def change_address(orderid: int, new_address: str) -> str:
     """Change the address for an order and return a confirmation message.
     
     Args:
-        orderid (str): The ID of the order to change the address for.
+        orderid (int): The ID of the order to change the address for.
         new_address (str): The new address to set for the order.
         
     Returns:

@@ -6,12 +6,12 @@ def check_orders():
     try:
         order_handler = OrderMongoDBHandler()
 
-        print("order_status 10001:", order_handler.order_status("10001"))
+        print("order_status 10001:", order_handler.order_status(10002))
 
-        # new_address = "1 Test St, Mumbai, Maharashtra 400001"
-        # print("update_address 10002:", order_handler.update_address("10002", new_address))
+        new_address = "1 Test St, Mumbai, Maharashtra 400001"
+        print("update_address 10002:", order_handler.update_address(10003, new_address))
 
-        # print("cancel_order 10001:", order_handler.cancel_order("10001"))
+        print("cancel_order 10001:", order_handler.cancel_order(10001))
     finally:
         order_handler.close_connection()
 
@@ -25,5 +25,5 @@ def load_order_data():
 
 
 if __name__ == "__main__":
-    # check_orders()
-    load_order_data()
+    check_orders()
+    # load_order_data()
