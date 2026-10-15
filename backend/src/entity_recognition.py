@@ -14,11 +14,11 @@ class OrderEntity(BaseModel):
     )
     new_address: Optional[str] = Field(
         default=None,
-        description="The new street/city address associated with that order, if mentioned."
+        description="The new street/city address associated with that order."
     )
     postal_code: Optional[int] = Field(
         default=None,
-        description="The postal/zip code associated with the address, converted to an integer."
+        description="The postal/zip code associated with the address"
     )
 
 
@@ -40,16 +40,11 @@ def extract_entity(conversation: list[dict]) -> EntityRecognition:
     transcript = _conversation_to_text(conversation)
 
     prompt = f"""
-        You are an expert data extraction AI. Your task is to extract order IDs, new addresses, and postal codes from a customer service transcript.
-
-        ### EXTRACTION RULES:
-        1. **Identify Orders:** Extract every distinct order mentioned. Group all information under a single object per unique `order_id`.
-        2. **Address Linking:** 
-        - Only extract a `new_address` or `postal_code` if the transcript *explicitly* links it to that specific `order_id`.
-        - If an address/zip is mentioned but not linked to an order, ignore it.
-        3. **Data Normalization (Crucial for Transcripts):**
-        - **Order IDs:** Convert spelled-out or phonetic numbers into standard digits (e.g., "one zero zero zero one" -> 10001). If the ID contains letters, format them as uppercase without spaces (e.g., "order a b c one two three" -> "ABC123").
-        - **Postal/Zip Codes:** Extract the postal or zip code and convert it strictly into an integer (e.g., "double one double zero five eight" -> 110058). Ensure this is placed in the `postal_code` field. Convert double x2, triple x3, and quadruple x4 to repeated digits (e.g., "double one" -> 11, "triple zero" -> 000, "quadruple zero" -> 0000).
+        ### INSTRUCTIONS:
+        Extract all order entities from the conversation.
+        - If an order ID is mentioned, extract it as an integer. (e.g., "one triple zero one" -> 10001)
+        - If a new address is mentioned, extract it as a string. (e.g., "one Test St, Mumbai, Maharashtra" -> "1 Test St, Mumbai, Maharashtra")
+        - If a postal code is mentioned, extract it as an integer. (e.g., "double one double zero two" -> 11002)
 
         ### TRANSCRIPT:
         {transcript}
