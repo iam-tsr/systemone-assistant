@@ -14,7 +14,11 @@ class OrderEntity(BaseModel):
     )
     new_address: Optional[str] = Field(
         default=None,
-        description="The new address associated with that order, if mentioned."
+        description="The new street/city address associated with that order, if mentioned."
+    )
+    postal_code: Optional[int] = Field(
+        default=None,
+        description="The postal/zip code associated with the address, converted to an integer."
     )
 
 
@@ -36,17 +40,16 @@ def extract_entity(conversation: list[dict]) -> EntityRecognition:
     transcript = _conversation_to_text(conversation)
 
     prompt = f"""
-        You are an expert data extraction AI. Your task is to extract order IDs and their associated new addresses from a customer service transcript.
+        You are an expert data extraction AI. Your task is to extract order IDs, new addresses, and postal codes from a customer service transcript.
 
         ### EXTRACTION RULES:
         1. **Identify Orders:** Extract every distinct order mentioned. Group all information under a single object per unique `order_id`.
         2. **Address Linking:** 
-        - Only extract a `new_address` if the transcript *explicitly* links that specific address to that specific `order_id`.
-        - If an address is mentioned but not linked to an order, ignore it.
-        - If an order is mentioned but no new address is provided for it, set `new_address` to `null`.
+        - Only extract a `new_address` or `postal_code` if the transcript *explicitly* links it to that specific `order_id`.
+        - If an address/zip is mentioned but not linked to an order, ignore it.
         3. **Data Normalization (Crucial for Transcripts):**
         - **Order IDs:** Convert spelled-out or phonetic numbers into standard digits (e.g., "one zero zero zero one" -> 10001). If the ID contains letters, format them as uppercase without spaces (e.g., "order a b c one two three" -> "ABC123").
-        - **Addresses/Zip Codes:** Convert spelled-out postal/zip codes into standard numeric format (e.g., "double one double zero five eight" -> "110058").
+        - **Postal/Zip Codes:** Extract the postal or zip code and convert it strictly into an integer (e.g., "double one double zero five eight" -> 110058). Ensure this is placed in the `postal_code` field. Convert double x2, triple x3, and quadruple x4 to repeated digits (e.g., "double one" -> 11, "triple zero" -> 000, "quadruple zero" -> 0000).
 
         ### TRANSCRIPT:
         {transcript}
@@ -85,21 +88,15 @@ def _conversation_to_text(conversation: list[dict]) -> str:
 
     return "\n".join(lines)
 
-def _clean_order_entities(orders: List["OrderEntity"]) -> Optional["OrderEntity"]:
+def _clean_order_entities(orders: List[OrderEntity]) -> Optional[OrderEntity]:
     """
     Clean extracted order entities.
-
-    Rules:
-    - Use the last entity as the primary entity.
-    - If the last entity is missing order_id, use the first entity's order_id.
-    - If the last entity is missing new_address, use the first entity's new_address.
     """
     if not orders:
         return None
 
     # Remove None values just in case
     valid_orders = [order for order in orders if order is not None]
-
     if not valid_orders:
         return None
 
@@ -117,10 +114,20 @@ def _clean_order_entities(orders: List["OrderEntity"]) -> Optional["OrderEntity"
         if last.new_address not in (None, "")
         else first.new_address
     )
+    
+    cleaned_postal_code = (
+        last.postal_code
+        if last.postal_code is not None
+        else first.postal_code
+    )
+
+    address_parts = [cleaned_new_address] if cleaned_new_address else []
+    if cleaned_postal_code is not None:
+        address_parts.append(str(cleaned_postal_code))
 
     return {
         "order_id": cleaned_order_id,
-        "new_address": cleaned_new_address
+        "new_address": " ".join(address_parts),
     }
 
 # ------------------------------------------------------------------------
