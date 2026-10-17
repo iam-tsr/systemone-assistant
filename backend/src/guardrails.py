@@ -1,6 +1,24 @@
 from .config import systemone_predict
 
 
+
+
+# harm_severity criteria are ordered none/minor/serious/severe; scores above
+# the nominal scale are clamped to 1.0 inside _weighted.
+_HARM_SCALE = 3.0
+
+
+def _weighted(value: float, confidence: float) -> float:
+    """Result x confidence, clamped to [0, 1].
+
+    A strong signal only counts in proportion to how confident the model is
+    in it, so a low-confidence flag cannot block on its own.
+    """
+    value = max(0.0, min(1.0, value))
+    confidence = max(0.0, min(1.0, confidence))
+    return int(value * confidence)
+
+
 def guardrail(state: str):
     questions = {
         "jailbreak": {
@@ -22,19 +40,21 @@ def guardrail(state: str):
             ]
         },
         "churn_risk": {
-            "type": "noul", 
-            "instructions": "Does `prompt` express frustration, anger, or dissatisfaction with the service, product, or company, indicating a potential risk of discontinuing use or switching to a competitor."},
+            "type": "noul",
+            "instructions": "Does `prompt` express frustration, anger, or dissatisfaction with the service, product, or company, indicating a potential risk of discontinuing use or switching to a competitor."}
     }
 
     result = systemone_predict(state, questions)
-    jailbreak = result["answers"]["jailbreak"]["noul"]
-    prompt_injection = result["answers"]["prompt_injection"]["noul"]
-    harm_severity = result["answers"]["harm_severity"]["score"]
-    churn_risk = result["answers"]["churn_risk"]["noul"]
+    answers = result["answers"]
 
-    risk_score = 1 if (jailbreak > 0.85 or prompt_injection > 0.85 or harm_severity>2) else 0
-
+    harm = answers["harm_severity"]
+    risk_score = max(
+        _weighted(answers["jailbreak"]["noul"], answers["jailbreak"]["confidence"]),
+        _weighted(answers["prompt_injection"]["noul"], answers["prompt_injection"]["confidence"]),
+        _weighted(harm["score"] / _HARM_SCALE, harm["confidence"]),
+    )
+    
     return {
         "risk_score": risk_score,
-        "churn_risk": churn_risk,
+        "churn_risk": answers["churn_risk"]["noul"],
     }
