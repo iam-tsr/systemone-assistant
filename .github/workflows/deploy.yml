@@ -3,6 +3,8 @@ name: Deploy Client to GitHub Pages
 on:
   push:
     branches: main
+    paths:
+      - 'frontend'
   workflow_dispatch:
 
 permissions:
