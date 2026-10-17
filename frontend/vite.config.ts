@@ -5,9 +5,7 @@ import path from "node:path";
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
-  const apiOrigin = env.VITE_API_URL ?? "http://127.0.0.1:8001";
-  const host = env.FRONTEND_HOST ?? "localhost";
-  const port = Number(env.FRONTEND_PORT ?? 3000);
+  const apiOrigin = env.VITE_API_URL;
 
   return {
     plugins: [react(), tailwindcss()],
@@ -17,8 +15,6 @@ export default defineConfig(({ mode }) => {
       },
     },
     server: {
-      host,
-      port,
       proxy: {
         "/api": {
           target: apiOrigin,
@@ -27,8 +23,6 @@ export default defineConfig(({ mode }) => {
       },
     },
     preview: {
-      host,
-      port,
       proxy: {
         "/api": {
           target: apiOrigin,
