@@ -11,7 +11,7 @@ class SystemOneSettings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_prefix="JEV_", extra="ignore")
 
     base_url: str
-    api_key: str | None = None
+    api_key: str
     model: str | None = None
 
     @field_validator("base_url", mode="before")

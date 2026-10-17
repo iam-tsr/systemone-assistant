@@ -5,15 +5,21 @@ probabilities -- no generated text. `POST /v1/systemone` is the endpoint
 `backend/src/config/systemone.py` calls: it takes a state and its questions and returns the
 engine's own payload, `{"model", "answers", "usage", "routing"}`.
 """
+import hmac
 import os
 import threading
 import traceback
+from pathlib import Path
 
 # Must be set before `laya` pulls in the tokenizers.
 os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
 
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).with_name(".env"))
+
 import torch
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, Header, HTTPException
 from pydantic import BaseModel
 
 from laya import Agent, Router
@@ -32,6 +38,32 @@ LOAD_ERROR = None
 # One process owns one GPU. Concurrent requests would contend for VRAM and for the Router's loaded
 # checkpoints, so forward passes are serialised.
 GPU_LOCK = threading.Lock()
+
+# The shared key for the model routes, read from `LAYA_API_KEY`. The backend already sends its
+# `JEV_API_KEY` as `Authorization: Bearer <key>`, so both sides carry the same value.
+API_KEY = os.environ.get("LAYA_API_KEY")
+
+
+def require_api_key(authorization: str | None = Header(default=None)) -> None:
+    """Reject any caller that cannot present the shared key.
+
+    Closed when unconfigured: with `LAYA_API_KEY` unset the model routes answer 503 instead of
+    serving anyone, because the container publishes port 8000 on every interface and the key is the
+    only thing between the checkpoints and the network.
+    """
+    if not API_KEY:
+        raise HTTPException(
+            503, "LAYA_API_KEY is not set on this server, so the model routes are closed."
+        )
+    scheme, _, token = (authorization or "").partition(" ")
+    # Compared as bytes so a non-ASCII header is a plain 401 rather than a TypeError from
+    # `compare_digest`, and in constant time so the key cannot be recovered byte by byte.
+    if scheme.lower() != "bearer" or not hmac.compare_digest(token.encode(), API_KEY.encode()):
+        raise HTTPException(
+            401,
+            "Send this server's key as `Authorization: Bearer <key>`.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
 
 def _build():
@@ -80,6 +112,9 @@ app = FastAPI(title="Laya", description="Typed System 1 decisions in a single fo
 def health() -> dict:
     """Liveness and readiness for a reverse proxy or a container healthcheck.
 
+    Deliberately unauthenticated -- it reveals only whether the checkpoints loaded -- so probes need
+    no key. Reachable without `LAYA_API_KEY`; `/v1/systemone` is not.
+
     Cheap and GPU-free: it reports whether the checkpoints loaded, which is the only thing that
     can be broken while the port is still accepting connections. Because `app.py` builds the
     checkpoints at import, uvicorn does not bind until they are either loaded or known to have
@@ -90,9 +125,11 @@ def health() -> dict:
     return {"status": "ok", "device": DEVICE}
 
 
-@app.post("/v1/systemone")
+@app.post("/v1/systemone", dependencies=[Depends(require_api_key)])
 def systemone(request: SystemOneRequest) -> dict:
     """Route, then answer every question in one forward pass on the chosen checkpoint.
+
+    Authenticated: the caller must present `Authorization: Bearer <LAYA_API_KEY>`.
 
     The response is the engine's payload verbatim: `model` (the checkpoint that answered),
     `answers` (one entry per question id), `usage` (token counts) and `routing` (why that
