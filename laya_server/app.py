@@ -4,6 +4,9 @@ One forward pass per state returns typed `choice` / `score` / `noul` answers wit
 probabilities -- no generated text. `POST /v1/systemone` is the endpoint
 `backend/src/config/systemone.py` calls: it takes a state and its questions and returns the
 engine's own payload, `{"model", "answers", "usage", "routing"}`.
+
+English only: the English checkpoint answers every request, whatever the script, and the
+multilingual checkpoint is never downloaded or built. See `MODEL`.
 """
 import hmac
 import os
@@ -27,10 +30,11 @@ from laya import Agent, Router
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 MODEL_REPO = "convaiinnovations/laya"
 
-# The Router's whole job is picking between these two by script detection. `typed-decisions` is
-# deliberately absent: it is fine-tuned on four synthetic workflows and should not be a silent
-# default. This mirrors the library's own DEFAULT_MODELS.
-CHECKPOINTS = {"english": None, "multilingual": "multilingual"}
+# English only. Dropping the Router's other branch is what makes that true: detection would send
+# non-Latin or non-English text to `multilingual`, which is a second ~421M-parameter checkpoint
+# resident for traffic this service does not serve. `typed-decisions` was already absent -- it is
+# fine-tuned on four synthetic workflows and should not be a silent default.
+MODEL = "english"
 
 ROUTER = None
 LOAD_ERROR = None
@@ -73,8 +77,7 @@ def _build():
     so the same weights are not held twice.
     """
     router = Router(device=DEVICE, max_loaded=2)
-    for name, subfolder in CHECKPOINTS.items():
-        router.attach(name, Agent(MODEL_REPO, subfolder=subfolder, device=DEVICE))
+    router.attach(MODEL, Agent(MODEL_REPO, device=DEVICE))
     return router
 
 
@@ -143,7 +146,7 @@ def systemone(request: SystemOneRequest) -> dict:
     # Only a name this server actually hosts is a pin. `model` is a free-form field in the caller's
     # config (JEV_MODEL), routinely set to a product name the Router has never heard of; passing
     # that through would raise on every request, so anything unrecognised falls back to routing.
-    model = request.model if request.model in CHECKPOINTS else None
+    model = request.model if request.model in MODEL else None
     try:
         with GPU_LOCK:
             return ROUTER.predict(request.state, request.questions, model=model)
