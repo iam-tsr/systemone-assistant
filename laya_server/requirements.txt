@@ -2,3 +2,4 @@ laya==0.3.20
 fastapi
 uvicorn
 python-dotenv
+numpy<2.0.0
