@@ -76,6 +76,20 @@ class SystemOneRequest(BaseModel):
 app = FastAPI(title="Laya", description="Typed System 1 decisions in a single forward pass.")
 
 
+@app.get("/health")
+def health() -> dict:
+    """Liveness and readiness for a reverse proxy or a container healthcheck.
+
+    Cheap and GPU-free: it reports whether the checkpoints loaded, which is the only thing that
+    can be broken while the port is still accepting connections. Because `app.py` builds the
+    checkpoints at import, uvicorn does not bind until they are either loaded or known to have
+    failed -- so reaching this route at all means the server finished starting.
+    """
+    if ROUTER is None:
+        raise HTTPException(503, "The checkpoints failed to load. See the server logs.")
+    return {"status": "ok", "device": DEVICE}
+
+
 @app.post("/v1/systemone")
 def systemone(request: SystemOneRequest) -> dict:
     """Route, then answer every question in one forward pass on the chosen checkpoint.
