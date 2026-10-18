@@ -5,7 +5,7 @@ import path from "node:path";
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
-  const apiOrigin = env.VITE_API_URL;
+  const apiOrigin = env.VITE_API_URL ?? "https://systemone-assistant.onrender.com";
 
   return {
     plugins: [react(), tailwindcss()],
@@ -17,16 +17,14 @@ export default defineConfig(({ mode }) => {
     server: {
       proxy: {
         "/api": {
-          target: apiOrigin,
-          changeOrigin: true,
+          target: apiOrigin
         },
       },
     },
     preview: {
       proxy: {
         "/api": {
-          target: apiOrigin,
-          changeOrigin: true,
+          target: apiOrigin
         },
       },
     },
