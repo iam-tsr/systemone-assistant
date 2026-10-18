@@ -28,7 +28,6 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { apiUrl } from "@/lib/api";
 import type { Order, Profile } from "@/lib/types";
 
 type View = "profile" | "orders" | "order" | null;
@@ -84,18 +83,18 @@ export function ProfileMenu() {
 
   const profile = useLoad<Profile>(
     view === "profile" ? view : null,
-    view === "profile" ? apiUrl("/api/profile") : null,
+    view === "profile" ? "/api/profile" : null,
     "user",
   );
   const orders = useLoad<Order[]>(
     view === "orders" ? view : null,
-    view === "orders" ? apiUrl("/api/orders") : null,
+    view === "orders" ? "/api/orders" : null,
     "orders",
   );
   const order = useLoad<Order>(
     view === "order" ? view : null,
     view === "order" && orderId !== null
-      ? apiUrl(`/api/orders/${encodeURIComponent(String(orderId))}`)
+      ? `/api/orders/${encodeURIComponent(String(orderId))}`
       : null,
     "order",
   );

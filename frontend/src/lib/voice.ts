@@ -2,8 +2,6 @@
 
 import { useCallback, useRef, useState } from "react";
 
-import { apiUrl } from "@/lib/api";
-
 import type { PersonaState } from "@/components/ai-elements/persona";
 
 export type VoiceStatus = "idle" | "recording" | "transcribing" | "speaking" | "error";
@@ -68,7 +66,7 @@ async function requestVoiceAgent(
 ): Promise<{ transcript: string; reply: string; audio: Blob }> {
   const form = new FormData();
   form.append("file", await toWav(blob), "utterance.wav");
-  const res = await fetch(apiUrl(`/api/voice/agent/${encodeURIComponent(sessionId)}`), {
+  const res = await fetch(`/api/voice/agent/${encodeURIComponent(sessionId)}`, {
     method: "POST",
     body: form,
   });

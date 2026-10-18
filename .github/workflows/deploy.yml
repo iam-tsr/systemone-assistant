@@ -41,7 +41,7 @@ jobs:
       - name: Build
         run: npm run build -- --base="${{ steps.pages.outputs.base_path }}/"
         env:
-          VITE_API_URL: ${{ vars.VITE_API_URL }}
+          BACKEND_API_URL: ${{ vars.BACKEND_API_URL }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
