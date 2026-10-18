@@ -1,12 +1,14 @@
 import react from "@vitejs/plugin-react";
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 import tailwindcss from "@tailwindcss/vite";
 import path from "node:path";
 
-export default defineConfig(() => {
-  const apiOrigin = "https://systemone-assistant.onrender.com";
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), "");
+  const apiOrigin = env.VITE_API_URL;
 
   return {
+    base: "/systemone-assistant/",
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
