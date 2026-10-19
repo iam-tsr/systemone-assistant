@@ -40,13 +40,13 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 def create_app() -> FastAPI:
     app = FastAPI(title="SystemOne Assistant API", lifespan=lifespan)
 
-    # The Next.js dev server calls the API from the browser.
     app.add_middleware(
         CORSMiddleware,
         allow_origins=cors_settings.allowed_origins,
-        allow_methods=["GET", "POST"],
         allow_credentials=True,
-        allow_headers=["*"], # allow all headers, only for dev server, not for production
+        allow_methods=["GET", "POST"],
+        allow_headers=["*"],
+        expose_headers=["X-Transcript", "X-Reply", "X-Action"],
     )
 
     app.include_router(profile.router, prefix="/api")

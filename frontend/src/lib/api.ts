@@ -2,8 +2,9 @@
 
 const raw = import.meta.env.VITE_API_URL as string | undefined;
 
-const base = raw?.trim().replace(/\/$/, "");
+const base = (raw?.trim().replace(/\/$/, "") ?? "") || undefined;
 
 export function apiUrl(path: string): string {
-  return `${base}${path.startsWith("/") ? path : `/${path}`}`;
+  const suffix = path.startsWith("/") ? path : `/${path}`;
+  return base ? `${base}${suffix}` : suffix;
 }
