@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { apiUrl } from "@/lib/api";
 
@@ -65,12 +65,14 @@ async function toWav(blob: Blob): Promise<Blob> {
 async function requestVoiceAgent(
   blob: Blob,
   sessionId: string,
+  signal?: AbortSignal,
 ): Promise<{ transcript: string; reply: string; audio: Blob }> {
   const form = new FormData();
   form.append("file", await toWav(blob), "utterance.wav");
   const res = await fetch(apiUrl(`/api/voice/agent/${encodeURIComponent(sessionId)}`), {
     method: "POST",
     body: form,
+    signal,
   });
   if (!res.ok) throw new Error(await readError(res));
   return {
@@ -78,20 +80,6 @@ async function requestVoiceAgent(
     reply: decodeURIComponent(res.headers.get("X-Reply") ?? ""),
     audio: await res.blob(),
   };
-}
-
-async function playAudio(blob: Blob): Promise<void> {
-  const url = URL.createObjectURL(blob);
-  const audio = new Audio(url);
-  try {
-    await audio.play();
-    await new Promise<void>((resolve, reject) => {
-      audio.onended = () => resolve();
-      audio.onerror = () => reject(new Error("Unable to play the assistant response"));
-    });
-  } finally {
-    URL.revokeObjectURL(url);
-  }
 }
 
 // Map the voice pipeline phase onto the Persona animation state.
@@ -110,29 +98,142 @@ export function personaStateFor(status: VoiceStatus): PersonaState {
 
 export function useVoiceLoop(onTurn?: (turn: VoiceTurn) => void) {
   const [status, setStatus] = useState<VoiceStatus>("idle");
+  const [active, setActive] = useState(false);
   const [transcript, setTranscript] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
-  const sessionIdRef = useRef<string | null>(null);
-  const recorderRef = useRef<MediaRecorder | null>(null);
-  const chunksRef = useRef<Blob[]>([]);
-  const monitorRef = useRef<number | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
 
-  const start = useCallback(async () => {
+  const sessionIdRef = useRef<string | null>(null);
+  const onTurnRef = useRef(onTurn);
+  onTurnRef.current = onTurn;
+
+  const activeRef = useRef(false);
+  const cancelledRef = useRef(false);
+  const segmentIdRef = useRef(0);
+
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const monitorRef = useRef<number | null>(null);
+  const restartTimerRef = useRef<number | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+  const audioElRef = useRef<HTMLAudioElement | null>(null);
+  const audioUrlRef = useRef<string | null>(null);
+
+  const clearRestartTimer = useCallback(() => {
+    if (restartTimerRef.current !== null) {
+      window.clearTimeout(restartTimerRef.current);
+      restartTimerRef.current = null;
+    }
+  }, []);
+
+  const stopAudio = useCallback(() => {
+    const el = audioElRef.current;
+    if (el) {
+      el.pause();
+      el.src = "";
+      try {
+        el.load();
+      } catch {
+        // ignore
+      }
+    }
+    audioElRef.current = null;
+    if (audioUrlRef.current) {
+      URL.revokeObjectURL(audioUrlRef.current);
+      audioUrlRef.current = null;
+    }
+  }, []);
+
+  const playAudioCancellable = useCallback(async (blob: Blob): Promise<void> => {
+    if (blob.size < 100) return;
+    const url = URL.createObjectURL(blob);
+    audioUrlRef.current = url;
+    const audio = new Audio(url);
+    audioElRef.current = audio;
+    await audio.play();
+    await new Promise<void>((resolve, reject) => {
+      const onEnd = () => {
+        cleanup();
+        resolve();
+      };
+      const onErr = () => {
+        cleanup();
+        reject(new Error("Unable to play the assistant response"));
+      };
+      const cleanup = () => {
+        audio.removeEventListener("ended", onEnd);
+        audio.removeEventListener("error", onErr);
+      };
+      audio.addEventListener("ended", onEnd, { once: true });
+      audio.addEventListener("error", onErr, { once: true });
+    });
+    if (audioUrlRef.current === url) {
+      URL.revokeObjectURL(url);
+      audioUrlRef.current = null;
+    }
+    audioElRef.current = null;
+  }, []);
+
+  const cleanupSegment = useCallback(() => {
+    if (monitorRef.current !== null) {
+      cancelAnimationFrame(monitorRef.current);
+      monitorRef.current = null;
+    }
+    if (audioContextRef.current) {
+      audioContextRef.current.close().catch(() => {});
+      audioContextRef.current = null;
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
+    recorderRef.current = null;
+  }, []);
+
+  // Forward-declare so startSegment and scheduleRestart can reference each other via refs
+  const startSegmentRef = useRef<() => Promise<void>>(async () => {});
+
+  const scheduleRestart = useCallback(
+    (delayMs: number) => {
+      if (!activeRef.current || cancelledRef.current) return;
+      clearRestartTimer();
+      restartTimerRef.current = window.setTimeout(() => {
+        restartTimerRef.current = null;
+        if (!activeRef.current || cancelledRef.current) return;
+        void startSegmentRef.current();
+      }, delayMs);
+    },
+    [clearRestartTimer],
+  );
+
+  const startSegment = useCallback(async () => {
+    if (!activeRef.current || cancelledRef.current) return;
+    if (recorderRef.current?.state === "recording") return;
+
+    const thisSegment = ++segmentIdRef.current;
     setError(null);
+
+    let chunks: Blob[] = [];
+    let audioContext: AudioContext | null = null;
+    let stream: MediaStream | null = null;
+
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      if (!activeRef.current || cancelledRef.current || thisSegment !== segmentIdRef.current) {
+        stream.getTracks().forEach((t) => t.stop());
+        return;
+      }
       streamRef.current = stream;
+
       const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
         ? "audio/webm;codecs=opus"
         : MediaRecorder.isTypeSupported("audio/webm")
           ? "audio/webm"
           : undefined;
-      const recorder = mimeType
-        ? new MediaRecorder(stream, { mimeType })
-        : new MediaRecorder(stream);
-      chunksRef.current = [];
-      const audioContext = new AudioContext();
+      const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+
+      audioContext = new AudioContext();
+      audioContextRef.current = audioContext;
       const analyser = audioContext.createAnalyser();
       analyser.fftSize = 1024;
       audioContext.createMediaStreamSource(stream).connect(analyser);
@@ -142,9 +243,10 @@ export function useVoiceLoop(onTurn?: (turn: VoiceTurn) => void) {
       const startedAt = performance.now();
 
       const monitor = () => {
+        if (!activeRef.current || cancelledRef.current || thisSegment !== segmentIdRef.current) return;
         analyser.getByteTimeDomainData(samples);
         const level = Math.sqrt(
-          samples.reduce((sum, sample) => sum + (sample - 128) ** 2, 0) / samples.length,
+          samples.reduce((sum, s) => sum + (s - 128) ** 2, 0) / samples.length,
         );
         const now = performance.now();
         if (level > 8) {
@@ -164,48 +266,136 @@ export function useVoiceLoop(onTurn?: (turn: VoiceTurn) => void) {
       };
 
       recorder.ondataavailable = (e) => {
-        if (e.data.size > 0) chunksRef.current.push(e.data);
+        if (e.data.size > 0) chunks.push(e.data);
       };
+
       recorder.onstop = async () => {
-        if (monitorRef.current !== null) cancelAnimationFrame(monitorRef.current);
-        await audioContext.close();
-        stream.getTracks().forEach((t) => t.stop());
-        streamRef.current = null;
-        const blob = new Blob(chunksRef.current, { type: recorder.mimeType });
+        if (monitorRef.current !== null) {
+          cancelAnimationFrame(monitorRef.current);
+          monitorRef.current = null;
+        }
+        if (audioContext && audioContextRef.current === audioContext) {
+          audioContext.close().catch(() => {});
+          audioContextRef.current = null;
+        }
+        // segment mic is done — release tracks so next segment gets a fresh one
+        stream?.getTracks().forEach((t) => t.stop());
+        if (streamRef.current === stream) streamRef.current = null;
+        recorderRef.current = null;
+
+        if (cancelledRef.current || !activeRef.current || thisSegment !== segmentIdRef.current) return;
+
+        const blob = new Blob(chunks, { type: recorder.mimeType });
+        const isSilent = !heardSpeech || blob.size < 800;
+        if (isSilent) {
+          if (activeRef.current && !cancelledRef.current) {
+            setStatus("recording");
+            scheduleRestart(250);
+          } else {
+            setStatus("idle");
+          }
+          return;
+        }
+
         setStatus("transcribing");
+        const ac = new AbortController();
+        abortRef.current = ac;
         try {
           sessionIdRef.current ??= crypto.randomUUID();
-          const result = await requestVoiceAgent(blob, sessionIdRef.current);
+          const result = await requestVoiceAgent(blob, sessionIdRef.current, ac.signal);
+          if (cancelledRef.current || !activeRef.current || thisSegment !== segmentIdRef.current) return;
           setTranscript(result.transcript);
-          onTurn?.({ transcript: result.transcript, reply: result.reply });
-          if (result.transcript.trim()) {
+          onTurnRef.current?.({ transcript: result.transcript, reply: result.reply });
+          if (result.transcript.trim() && result.audio.size > 100) {
             setStatus("speaking");
-            await playAudio(result.audio);
+            await playAudioCancellable(result.audio);
+            if (cancelledRef.current || !activeRef.current) return;
           }
-          setStatus("idle");
+          if (activeRef.current && !cancelledRef.current && thisSegment === segmentIdRef.current) {
+            setStatus("recording");
+            scheduleRestart(350);
+          } else {
+            setStatus("idle");
+          }
         } catch (err) {
+          if ((err as DOMException)?.name === "AbortError") return;
+          if (cancelledRef.current || !activeRef.current) return;
           setError(err instanceof Error ? err.message : "Voice request failed");
           setStatus("error");
+          if (activeRef.current && !cancelledRef.current) scheduleRestart(900);
+        } finally {
+          if (abortRef.current === ac) abortRef.current = null;
         }
       };
+
       recorder.start();
       recorderRef.current = recorder;
       setStatus("recording");
       monitorRef.current = requestAnimationFrame(monitor);
     } catch (err) {
-      streamRef.current?.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
+      if (!activeRef.current || cancelledRef.current) return;
+      cleanupSegment();
       setError(err instanceof Error ? err.message : "Microphone unavailable");
       setStatus("error");
+      activeRef.current = false;
+      setActive(false);
     }
-  }, []);
+  }, [cleanupSegment, playAudioCancellable, scheduleRestart]);
+
+  startSegmentRef.current = startSegment;
+
+  const start = useCallback(async () => {
+    if (activeRef.current) return;
+    cancelledRef.current = false;
+    activeRef.current = true;
+    setActive(true);
+    setError(null);
+    segmentIdRef.current += 1;
+    clearRestartTimer();
+    await startSegment();
+  }, [clearRestartTimer, startSegment]);
 
   const stop = useCallback(() => {
-    if (monitorRef.current !== null) cancelAnimationFrame(monitorRef.current);
-    if (recorderRef.current?.state === "recording") recorderRef.current.stop();
-    recorderRef.current = null;
-    streamRef.current?.getTracks().forEach((track) => track.stop());
-  }, []);
+    cancelledRef.current = true;
+    activeRef.current = false;
+    setActive(false);
+    segmentIdRef.current += 1;
+    clearRestartTimer();
+    if (monitorRef.current !== null) {
+      cancelAnimationFrame(monitorRef.current);
+      monitorRef.current = null;
+    }
+    abortRef.current?.abort();
+    abortRef.current = null;
+    const rec = recorderRef.current;
+    if (rec?.state === "recording") {
+      try {
+        rec.stop();
+      } catch {
+        // ignore
+      }
+    }
+    stopAudio();
+    cleanupSegment();
+    setStatus("idle");
+    // allow next start() immediately
+    window.setTimeout(() => {
+      cancelledRef.current = false;
+    }, 0);
+  }, [cleanupSegment, clearRestartTimer, stopAudio]);
 
-  return { status, transcript, error, start, stop };
+  useEffect(() => {
+    return () => {
+      cancelledRef.current = true;
+      activeRef.current = false;
+      clearRestartTimer();
+      if (monitorRef.current !== null) cancelAnimationFrame(monitorRef.current);
+      abortRef.current?.abort();
+      stopAudio();
+      if (audioContextRef.current) audioContextRef.current.close().catch(() => {});
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+    };
+  }, [clearRestartTimer, stopAudio]);
+
+  return { status, active, transcript, error, start, stop };
 }

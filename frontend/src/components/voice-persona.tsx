@@ -6,6 +6,7 @@ import {
   EyeClosedIcon,
   MegaphoneIcon,
   MicIcon,
+  SquareIcon,
   type LucideIcon,
 } from "lucide-react";
 
@@ -29,24 +30,38 @@ const states: { state: PersonaState; icon: LucideIcon; label: string }[] = [
 ];
 
 export function VoicePersona({ onTurn }: { onTurn?: (turn: VoiceTurn) => void }) {
-  const { status, error, start, stop } = useVoiceLoop(onTurn);
+  const { status, active, error, start, stop } = useVoiceLoop(onTurn);
   const personaState = personaStateFor(status);
-  const recording = status === "recording";
+  const busyLabel =
+    status === "transcribing" ? "Thinking…" : status === "speaking" ? "Speaking…" : "Listening…";
 
   return (
     <div className="flex flex-col items-center justify-center gap-6">
       <Persona className="size-64" state={personaState} variant="mana" />
 
-      <Button
-        size="lg"
-        variant={recording ? "destructive" : "default"}
-        aria-label={recording ? "Stop recording" : "Start recording"}
-        disabled={status === "transcribing" || status === "speaking"}
-        onClick={recording ? stop : start}
-      >
-        <MicIcon />
-        {recording ? "Stop" : "Speak"}
-      </Button>
+      {/* Continuous listening: Start opens the session (keeps listening on silence gaps,
+          auto-processes each utterance). Stop cancels everything and ends the session. */}
+      {!active ? (
+        <Button
+          size="lg"
+          aria-label="Start listening"
+          onClick={start}
+          disabled={status === "transcribing" || status === "speaking"}
+        >
+          <MicIcon />
+          Start
+        </Button>
+      ) : (
+        <div className="flex flex-col items-center gap-2">
+          <Button size="lg" variant="destructive" aria-label="Stop listening" onClick={stop}>
+            <SquareIcon className="fill-current" />
+            Stop
+          </Button>
+          <span className="text-xs text-muted-foreground" aria-live="polite">
+            {busyLabel}
+          </span>
+        </div>
+      )}
 
       {error && <p className="text-sm text-destructive">{error}</p>}
 
