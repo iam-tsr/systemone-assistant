@@ -6,6 +6,16 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { VoicePersona } from "@/components/voice-persona";
 import type { VoiceTurn } from "@/lib/voice";
 
+function renderAssistantReply(reply: string) {
+  return reply.split(/(\*\*[^*\n]+\*\*)/g).map((part, index) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return <strong key={index}>{part.slice(2, -2)}</strong>;
+    }
+
+    return part;
+  });
+}
+
 export default function App() {
   const [turns, setTurns] = useState<VoiceTurn[]>([]);
   const handleTurn = useCallback((turn: VoiceTurn) => {
@@ -49,7 +59,7 @@ export default function App() {
                     <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                       Assistant
                     </p>
-                    <p>{turn.reply}</p>
+                    <p className="whitespace-pre-wrap">{renderAssistantReply(turn.reply)}</p>
                   </div>
                 </div>
               ))
